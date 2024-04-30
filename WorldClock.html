@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Clock</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+    }
+    th, td {
+        border: 1px solid #ccc;
+        padding: 8px;
+        text-align: center;
+        border-radius: 6px; /* Rounded corners */
+    }
+    .offset-row {
+        background-color: #b3f0ff;
+    }
+    .even-row {
+        background-color: #e6f2ff;
+    }
+    .gray-cell {
+        background-color: #666666;
+    }
+    .current-row {
+        background-color: #ffccff;
+    }
+    .hdr-row {
+        background-color: #b84dff;
+    }
+    tr:hover {
+        background-color: yellow !important;
+        color: #9900cc;
+    }
+</style>
+</head>
+<body>
+<table id="TimeTable">
+  <thead>
+    <!-- Header row will be inserted here -->
+  </thead>
+
+  <tbody>
+    <!-- Table body rows will be inserted here -->
+  </tbody>
+</table>
+
+<script>
+
+// Customization
+var myTimeZone="America/Los_Angeles";
+var startOfDayTime=8
+var endOfDayTime=20
+var startRowOffset=-12
+var endRowOffset=12
+
+// Timezone codes for each city
+// Asia/Phnom_Penh - https://timezonedb.com/time-zones
+
+var timezones = {
+    "San Diego": "America/Los_Angeles",
+    "Perth": "Australia/Perth",
+    "Sydney": "Australia/Sydney",
+    "New Zealand": "Pacific/Auckland",
+    "Hyderabad": "Asia/Kolkata",
+    "Cambodia": "Asia/Phnom_Penh",
+    "Virginia": "America/New_York",
+    "UK": "Europe/London"
+};
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+function getTimeZoneOffset(date, timeZone) {
+
+    // Abuse the Intl API to get a local ISO 8601 string for a given time zone.
+    let iso = date.toLocaleString('en-CA', { timeZone, hour12: false }).replace(', ', 'T');
+    
+    // Include the milliseconds from the original timestamp
+    iso += '.' + date.getMilliseconds().toString().padStart(3, '0');
+    
+    // Lie to the Date object constructor that it's a UTC time.
+    const lie = new Date(iso + 'Z');
+
+    // Return the difference in timestamps, as minutes
+    // Positive values are West of GMT, opposite of ISO 8601
+    // this matches the output of `Date.getTimeZoneOffset`
+    return (lie - date) / 60 / 1000;
+}
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+function buildClassName (city, rowName, offset) {
+    var className;
+
+    if (offset == null) {
+        className=city.replace(/\s+/g, '') + "-" + rowName;
+    } else {
+        className=city.replace(/\s+/g, '') + "-" + rowName + "-" + offset;
+    }
+
+    return className;
+}
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+function buildHeaderRow () {
+    // Get the reference for the table
+    var table = document.querySelector('#TimeTable');
+
+    // Create a header row
+    var headerRow = table.createTHead().insertRow();
+    headerRow.classList.add("hdr-row");
+
+
+    // Create the first column and label it "City"
+    var cell = document.createElement("th");
+    cell.textContent = "City";
+    headerRow.appendChild(cell);
+        
+    // Create the City columns
+    for (var city in timezones) {
+        var cell = document.createElement("th");
+
+        cell.textContent = city;
+        headerRow.appendChild(cell);
+
+        className=buildClassName (city, "header");
+        cell.classList.add(className);
+    }
+}
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+function buildUtcOffsetRow (row) {
+    // Create the first column and label it "Offset (Hours)"
+    var cell = document.createElement("th");
+    cell.textContent = "Offset (UTC) / Local";
+    row.appendChild(cell);
+
+    for (var city in timezones) {
+        var className=buildClassName (city, "utc-offset");
+
+        var cell = row.insertCell();
+        cell.textContent = className;
+        cell.classList.add (className);
+        cell.setAttribute("id", className);
+    }
+
+    row.classList.add ("offset-row");
+}
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+function buildRowColumns (row, rowName, offset) {
+    // Create the first column and label it offset + " Hrs"
+    var cell = document.createElement("th");
+
+    if (offset == 0) {
+        cell.textContent = "Current Time";
+    } else {
+        cell.textContent = offset + " Hrs";
+    }
+
+    row.appendChild(cell);
+
+    for (var city in timezones) {
+        className=buildClassName (city, rowName, offset);
+
+        var cell = row.insertCell();
+        cell.textContent = className;
+        cell.classList.add(className);
+        cell.setAttribute("id", className);
+    }
+}
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+function buildTable() {
+
+    buildHeaderRow();
+
+
+    // Get the reference for the table
+    var table = document.querySelector('#TimeTable');
+    // Get the reference for the table body
+    var tableBody = table.createTBody();
+    var row = tableBody.insertRow();
+
+
+    buildUtcOffsetRow(row);
+
+    // Loop through rows
+    for (var i = startRowOffset; i <= endRowOffset; i++) {
+        // Create a new row
+        var row = tableBody.insertRow();
+
+        buildRowColumns (row, "time-offset", i);
+
+        if (i == 0) {
+            row.classList.add("current-row");
+        } else {
+            if ( i % 2 == 0) {
+                row.classList.add("even-row");
+            } 
+        }
+    }
+}
+
+function updateClocks() {
+    var myTimeZoneDispOptions = {timeZone: myTimeZone, hour12: false, hour: "numeric", minute: "numeric", second: "numeric"};
+
+    // Get current time in UTC
+    var currentTime=new Date();
+
+
+    // Loop through rows - Update the time for each city
+    for (var offset = startRowOffset; offset <= endRowOffset; offset++) {
+        // Create a new row
+
+        for (var city in timezones) {
+            var timezone = timezones[city];
+
+            var cityTimeZoneDispOptions = {timeZone: timezone, weekday: "long", day: "numeric", hour12: false, hour: "numeric", minute: "numeric", second: "numeric"};
+            var cityTimeZoneHourOptions = {timeZone: timezone, hour12: false, hour: "numeric"};
+	
+            // Populate the Current Time row 
+            className=buildClassName (city, "time-offset", offset);
+            var elem=document.getElementById(className);
+
+            // console.log ("Update Clock: " + className + " elememt: " + elem);
+
+            if (elem != null) {
+                var cityTimeStr = new Date(currentTime.getTime() + (offset * 3600000)).toLocaleString('en-US', cityTimeZoneDispOptions);
+                elem.textContent = cityTimeStr;
+
+                // Highlight the cell if the time is before 8 am or after 8 pm
+                var hour = new Date(currentTime.getTime() + (offset * 3600000)).toLocaleString('en-US', cityTimeZoneHourOptions);
+
+                // console.log (city + "   " + cityTimeStr + "     hour: " + hour);
+
+                if (parseInt(hour) < startOfDayTime || parseInt(hour) > endOfDayTime) {
+                    elem.classList.add("gray-cell");
+                } else {
+                    elem.classList.remove("gray-cell");
+                }
+            }
+        }
+    }
+
+
+    for (var city in timezones) {
+        // Calculate offset hours
+        var timezone = timezones[city];
+
+        var utcOffset = getTimeZoneOffset(new Date(), timezone) / 60;
+        var myOffset = (getTimeZoneOffset(new Date(), timezone) - getTimeZoneOffset(new Date(), myTimeZone)) / 60;
+        className=buildClassName (city, "utc-offset");
+        var elem = document.getElementById(className);
+    
+        console.log ("Update Offset: " + className + " elememt: " + elem);
+        if (elem != null) {
+            if (utcOffset > 0) {
+                elem.textContent = "UTC (+" + utcOffset + ") / " + myOffset;
+            }  else {
+                elem.textContent = "UTC (" + utcOffset + ") / " + myOffset;
+            }
+        }
+    }
+}
+
+buildTable();
+
+// Update clocks every second
+setInterval(updateClocks, 1000);
+
+// Initial update
+updateClocks();
+   
+</script>
+</body>
+</html>

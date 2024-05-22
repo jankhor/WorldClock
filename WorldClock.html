@@ -3,11 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv='cache-control' content='no-cache'> 
+<meta http-equiv='expires' content='0'> 
+<meta http-equiv='pragma' content='no-cache'>
 <title>World Clock</title>
 <style>
     body {
         font-family: Arial, sans-serif;
-        background-image: url('https://github.com/cyeh2kg/WorldClock/blob/master/Images/WorldClock.jpg'); /* Replace 'background-image.jpg' with your image file */
+        background-image: url('images/WorldClock.jpg'); /* Replace 'background-image.jpg' with your image file */
         background-size: cover;
         background-repeat: no-repeat;
         background-attachment: fixed;
@@ -57,13 +60,6 @@
 </head>
 <body>
 <table id="TimeTable">
-  <thead>
-    <!-- Header row will be inserted here -->
-  </thead>
-
-  <tbody>
-    <!-- Table body rows will be inserted here -->
-  </tbody>
 </table>
 
 <script>
@@ -84,9 +80,10 @@ var timezones = {
     "Sydney": "Australia/Sydney",
     "New Zealand": "Pacific/Auckland",
     "Hyderabad": "Asia/Kolkata",
-    "Cambodia": "Asia/Phnom_Penh",
     "Virginia": "America/New_York",
-    "UK": "Europe/London"
+    "UK": "Europe/London",
+    "UTC/GMT": "GMT",
+    "Cambodia": "Asia/Phnom_Penh"
 };
 
 //----------------------------------------------------------------------------
@@ -123,6 +120,8 @@ function buildClassName (city, rowName, offset) {
 }
 
 //----------------------------------------------------------------------------
+// 1st row
+// Build Header row and columns, name the cell as <columnLabel>-"header"
 //----------------------------------------------------------------------------
 function buildHeaderRow () {
     // Get the reference for the table
@@ -135,7 +134,9 @@ function buildHeaderRow () {
 
     // Create the first column and label it "City"
     var cell = document.createElement("th");
+    className=buildClassName ("City", "header");
     cell.textContent = "City";
+    cell.classList.add(className);
     headerRow.appendChild(cell);
         
     // Create the City columns
@@ -151,16 +152,23 @@ function buildHeaderRow () {
 }
 
 //----------------------------------------------------------------------------
+// 2nd row
+// Build the "UTC Offset / Local Offset row and columns, name the cell as <columnLabel>-"utc-offset"
 //----------------------------------------------------------------------------
 function buildUtcOffsetRow (row) {
     // Create the first column and label it "Offset (Hours)"
     var cell = document.createElement("th");
-    cell.textContent = "Offset (UTC) / Local";
+
+    var className=buildClassName ("City", "utc-offset");
+    cell.textContent = "UTC Offset / Local Offset";
+    cell.classList.add (className);
+    cell.setAttribute("id", className);
+
     row.appendChild(cell);
     row.style.height = "30px";
 
     for (var city in timezones) {
-        var className=buildClassName (city, "utc-offset");
+        className=buildClassName (city, "utc-offset");
 
         var cell = row.insertCell();
         cell.textContent = className;
@@ -182,6 +190,10 @@ function buildRowColumns (row, rowName, offset) {
     } else {
         cell.textContent = offset + " Hrs";
     }
+
+    className=buildClassName ("City", rowName, offset);
+    cell.classList.add(className);
+    cell.setAttribute("id", className);
 
     row.appendChild(cell);
 
@@ -232,20 +244,17 @@ function buildTable() {
 }
 
 function updateClocks() {
-    var myTimeZoneDispOptions = {timeZone: myTimeZone, hour12: false, hour: "numeric", minute: "numeric", second: "numeric"};
-
     // Get current time in UTC
     var currentTime=new Date();
 
 
     // Loop through rows - Update the time for each city
     for (var offset = startRowOffset; offset <= endRowOffset; offset++) {
-        // Create a new row
 
         for (var city in timezones) {
             var timezone = timezones[city];
 
-            var cityTimeZoneDispOptions = {timeZone: timezone, weekday: "long", day: "numeric", hour12: false, hour: "numeric", minute: "numeric", second: "numeric"};
+            var cityTimeZoneDispOptions = {timeZone: timezone, weekday: "short", day: "numeric", hour12: true, hour: "numeric", minute: "numeric"};
             var cityTimeZoneHourOptions = {timeZone: timezone, hour12: false, hour: "numeric"};
 	
             // Populate the Current Time row 
@@ -285,9 +294,9 @@ function updateClocks() {
         console.log ("Update Offset: " + className + " elememt: " + elem);
         if (elem != null) {
             if (utcOffset > 0) {
-                elem.textContent = "UTC (+" + utcOffset + ") / " + myOffset;
+                elem.textContent = "UTC (+" + utcOffset + ") / Offset (" + myOffset + ")";
             }  else {
-                elem.textContent = "UTC (" + utcOffset + ") / " + myOffset;
+                elem.textContent = "UTC (" + utcOffset + ") / Offset (" + myOffset + ")";
             }
         }
     }

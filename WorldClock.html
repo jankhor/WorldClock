@@ -254,10 +254,19 @@ function buildTable() {
     }
 }
 
+
+function logSanDiego (city, msg) {
+    if ("San Diego" === city) {
+        console.log (msg);
+    }
+}
+
+
 function updateClocks() {
     // Get current time in UTC
     var currentTime=new Date();
 
+    console.log ("\nupdateClocks");
 
     // Loop through rows - Update the time for each city
     for (var offset = startRowOffset; offset <= endRowOffset; offset++) {
@@ -265,25 +274,32 @@ function updateClocks() {
         for (var city in timezones) {
             var timezone = timezones[city];
 
-            var cityTimeZoneDispOptions = {timeZone: timezone, weekday: "short", day: "numeric", hour12: true, hour: "numeric", minute: "numeric"};
-            var cityTimeZoneHourOptions = {timeZone: timezone, hour12: false, hour: "numeric"};
+            var cityTimeZoneDispOptions     = {timeZone: timezone, weekday: "short", day: "numeric", hour12: true, hour: "numeric", minute: "numeric"};
+            var cityTimeZoneHourOptions     = {timeZone: timezone,                                  hour12: false, hour: "numeric"};
+            var cityTimeZoneDayOfWeekOptions= {timeZone: timezone, weekday: "short"};
 	
             // Populate the Current Time row 
             className=buildClassName (city, "time-offset", offset);
             var elem=document.getElementById(className);
 
             // console.log ("Update Clock: " + className + " elememt: " + elem);
+            // logSanDiego (city, "Update Clock: " + className + " elememt: " + elem);
 
             if (elem != null) {
-                var cityTimeStr = new Date(currentTime.getTime() + (offset * 3600000)).toLocaleString('en-US', cityTimeZoneDispOptions);
+                var dateForSpecificTimeZoneAndOffset = new Date(currentTime.getTime() + (offset * 3600000));
+                var cityTimeStr = dateForSpecificTimeZoneAndOffset.toLocaleString('en-US', cityTimeZoneDispOptions);
                 elem.textContent = cityTimeStr;
 
                 // Highlight the cell if the time is before 8 am or after 8 pm
-                var hour = new Date(currentTime.getTime() + (offset * 3600000)).toLocaleString('en-US', cityTimeZoneHourOptions);
-
+                var hour = dateForSpecificTimeZoneAndOffset.toLocaleString('en-US', cityTimeZoneHourOptions);
                 // console.log (city + "   " + cityTimeStr + "     hour: " + hour);
+                // logSanDiego (city, city + "   " + cityTimeStr + "     hour: " + hour);
 
-                if (parseInt(hour) < startOfDayTime || parseInt(hour) > endOfDayTime) {
+                var dayOfWeek = dateForSpecificTimeZoneAndOffset.toLocaleString('en-US', cityTimeZoneDayOfWeekOptions);
+                // console.log (city + "   " + cityTimeStr + "     hour: " + hour + "  DayOfWeek: " + dayOfWeek);
+                // logSanDiego (city, city + "   " + cityTimeStr + "     hour: " + hour + "  DayOfWeek: " + dayOfWeek);
+
+                if (parseInt(hour) < startOfDayTime || parseInt(hour) > endOfDayTime || dayOfWeek.startsWith ('S')) {
                     elem.classList.add("gray-cell");
                 } else {
                     elem.classList.remove("gray-cell");
@@ -302,7 +318,7 @@ function updateClocks() {
         className=buildClassName (city, "utc-offset");
         var elem = document.getElementById(className);
     
-        console.log ("Update Offset: " + className + " elememt: " + elem);
+        // console.log ("Update Offset: " + className + " elememt: " + elem);
         if (elem != null) {
             if (utcOffset > 0) {
                 elem.textContent = "UTC (+" + utcOffset + ") / Offset (" + myOffset + ")";

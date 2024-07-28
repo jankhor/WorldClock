@@ -10,8 +10,9 @@
 <title>World Clock</title>
 <style>
     body {
-        font-family: Arial, sans-serif;
-        background-image: url('images/WorldClock.jpg'); /* Replace 'background-image.jpg' with your image file */
+        font-family: 'Inter', sans-serif;
+        background-image: url('images/WorldClock.jpg'); 
+        /* Replace 'background-image.jpg' with your image file */
         background-size: cover;
         background-repeat: no-repeat;
         background-attachment: fixed;
@@ -23,65 +24,81 @@
         align-items: center;
     }
 
-    table thead tr th {
-        /*background-color: rgba(94, 6, 153, 0.8); */
+    .scrollable-table-div {
+        align: center;
+        width: 95%;
+        height: 760px;
+        overflow-y: auto;
+    }
+
+    .TimeTable {
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    /* Left Header and data */
+    .TimeTable th,
+    .TimeTable td {
+        border: 1px solid #ccc;
+        padding: 6px;
+        text-align: center;
+        border-radius: 6px 9px; /* Rounded corners */
+    }
+
+    /* Top Header Row class */
+    .hdr-row {
         background-color: rgba(184, 77, 255, .85);
-        /* color: #ffcc00; */
         font-weight: bold;
+        color: black;
         position: sticky;
-        z-index: 100;
         top: 0;
     }
 
-    table {
-        border-collapse: collapse;
-        width: 95%;
-    }
-    th, td {
-        border: 1px solid #ccc;
-        padding: 8px;
-        text-align: center;
-        border-radius: 6px; /* Rounded corners */
-    }
     .offset-row {
         background-color: #f2e6ff;
     }
+
     .even-row {
         /* background-color: #b3d9ff; */
-        background-color: rgba(179, 217, 255, .8)
+        background-color: rgba(179, 217, 255, .8);
     }
+
     .odd-row {
         /* background-color: #fdfdfd; */
-        background-color: rgba(253, 253, 253, .8)
+        background-color: rgba(253, 253, 253, .8);
     }
+
     .gray-cell {
         background-color: #666666;
     }
+
     .current-row {
         background-color: #ffccff;
+        font-weight: bold;
     }
-    .hdr-row {
-        /* background-color: #b84dff; */
-        background-color: rgba(184, 77, 255, .7)
-    }
+
     tr:hover {
-        background-color: yellow !important;
-        color: #9900cc;
+        /* background-color: yellow !important; */
+        background-color: #a834eb !important;
+        /* color: #9900cc; */
+        color: yellow;
+        font-weight: bold;
     }
 </style>
 </head>
 <body>
-<table id="TimeTable">
-</table>
-
+    <div class="scrollable-table-div">
+        <table class="TimeTable">
+        </table>
+    </div>
 <script>
 
 // Customization
 var myTimeZone="America/Los_Angeles";
 var startOfDayTime=8
 var endOfDayTime=20
-var startRowOffset=-12
-var endRowOffset=12
+var startRowOffset=-16
+var endRowOffset=18
 
 // Timezone codes for each city
 // Asia/Phnom_Penh - https://timezonedb.com/time-zones
@@ -91,11 +108,11 @@ var timezones = {
     "Perth": "Australia/Perth",
     "Sydney": "Australia/Sydney",
     "New Zealand": "Pacific/Auckland",
-    "Hyderabad": "Asia/Kolkata",
-    "Virginia": "America/New_York",
+    "Hydera.": "Asia/Kolkata",
+    "Boston": "America/New_York",
     "UK": "Europe/London",
     "UTC/GMT": "GMT",
-    "Cambodia": "Asia/Phnom_Penh"
+    "Khmer": "Asia/Phnom_Penh"
 };
 
 //----------------------------------------------------------------------------
@@ -137,7 +154,7 @@ function buildClassName (city, rowName, offset) {
 //----------------------------------------------------------------------------
 function buildHeaderRow () {
     // Get the reference for the table
-    var table = document.querySelector('#TimeTable');
+    var table = document.querySelector('.TimeTable');
 
     // Create a header row
     var headerRow = table.createTHead().insertRow();
@@ -227,7 +244,7 @@ function buildTable() {
 
 
     // Get the reference for the table
-    var table = document.querySelector('#TimeTable');
+    var table = document.querySelector('.TimeTable');
     // Get the reference for the table body
     var tableBody = table.createTBody();
     var row = tableBody.insertRow();

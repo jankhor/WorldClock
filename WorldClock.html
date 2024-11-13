@@ -107,14 +107,14 @@ var endRowOffset=18
 
 var timezones = {
     "San Diego": "America/Los_Angeles",
-    "Boston": "America/New_York",
+    // "Boston": "America/New_York",
     "Perth": "Australia/Perth",
     "Sydney": "Australia/Sydney",
     "New Zealand": "Pacific/Auckland",
     "Hydera.": "Asia/Kolkata",
-    "UK": "Europe/London",
-    "UTC/GMT": "GMT",
-    "Khmer": "Asia/Phnom_Penh"
+    "London": "Europe/London",
+    "UTC": "UTC",
+    // "Khmer": "Asia/Phnom_Penh"
 };
 
 //----------------------------------------------------------------------------
@@ -131,7 +131,7 @@ function getTimeZoneOffset(date, timeZone) {
     const lie = new Date(iso + 'Z');
 
     // Return the difference in timestamps, as minutes
-    // Positive values are West of GMT, opposite of ISO 8601
+    // Positive values are West of UTC, opposite of ISO 8601
     // this matches the output of `Date.getTimeZoneOffset`
     return (lie - date) / 60 / 1000;
 }

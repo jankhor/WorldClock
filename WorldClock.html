@@ -86,10 +86,42 @@
         color: yellow;
         font-weight: bold;
     }
+
+    a {
+        text-decoration: none;
+        display: inline-block;
+        padding: 8px 16px;
+    }
+
+    a:hover {
+        background-color: #ddd;
+        color: black;
+    }
+    a:active {
+        background-color: #85eaed;
+        color: black;
+    }
+    .previous {
+        background-color: #a8a3a3;
+        color: black;
+    }
+
+    .next {
+        background-color: #04AA6D;
+        color: white;
+    }
+
+    .round {
+        border-radius: 50%;
+    }
 </style>
 </head>
 <body>
     <div class="scrollable-table-div">
+        <center><b>Change Date:</b> 
+            <a href="#" class="previous round" onclick="previousDate();return false;">&#8249;</a>
+            <input type="date" id="dateInput">
+            <a href="#" class="next round" onclick="nextDate();return false;">&#8250;</a></center> 
         <table class="TimeTable">
         </table>
     </div>
@@ -117,22 +149,49 @@ var timezones = {
     // "Khmer": "Asia/Phnom_Penh"
 };
 
+function traceMsg( msg) {
+    return 0
+    console.log (`[TRACE] - ${msg}`);
+}
+
+function debugMsg( msg) {
+    // return 0
+    console.log (`[DEBUG] - ${msg}`);
+}
+
+// Set the selected date to current date
+// var selectedDate = new Date();
+var dateStr = "2025-03-01" + "T" + new Date().toTimeString().split(" ")[0];
+debugMsg ("dateStr: " + dateStr);
+var timestamp=Date.parse(dateStr);
+
+debugMsg ("timestamp: " + timestamp);
+var selectedDate = new Date(Date.parse(dateStr));
+selectedDate = new Date();
+debugMsg ("selectedDate: " + selectedDate);
+
 //----------------------------------------------------------------------------
+// Calcculate the date offset from UTC
 //----------------------------------------------------------------------------
 function getTimeZoneOffset(date, timeZone) {
-
+    traceMsg ("getTimeZoneOffset - date: " + date + " - Timezone: " + timeZone);
     // Abuse the Intl API to get a local ISO 8601 string for a given time zone.
     let iso = date.toLocaleString('en-CA', { timeZone, hour12: false }).replace(', ', 'T');
     
+    traceMsg ("  getTimeZoneOffset - iso: " + iso);
+
     // Include the milliseconds from the original timestamp
     iso += '.' + date.getMilliseconds().toString().padStart(3, '0');
+    traceMsg ("  getTimeZoneOffset - iso2: " + iso);
     
     // Lie to the Date object constructor that it's a UTC time.
     const lie = new Date(iso + 'Z');
+    traceMsg ("  getTimeZoneOffset - lie: " + lie);
 
     // Return the difference in timestamps, as minutes
     // Positive values are West of UTC, opposite of ISO 8601
     // this matches the output of `Date.getTimeZoneOffset`
+    traceMsg ("  getTimeZoneOffset - Return: " + (lie - date) / 60 / 1000);
     return (lie - date) / 60 / 1000;
 }
 
@@ -186,7 +245,15 @@ function buildHeaderRow () {
 // 2nd row
 // Build the "UTC Offset / Local Offset row and columns, name the cell as <columnLabel>-"utc-offset"
 //----------------------------------------------------------------------------
-function buildUtcOffsetRow (row) {
+function buildUtcOffsetRow () {
+    debugMsg ("buildUtcOffsetRow: rowOffsetElement - " + document.getElementById("offset-row"));
+    var offsetRow = document.getElementById("offset-row");
+    debugMsg ("buildUtcOffsetRow: " + offsetRow);
+
+    offsetRow.innerHTML = "";
+    // Instead of passing in the row, we should set a class for the row and hae this
+    // function lookup the row.
+
     // Create the first column and label it "Offset (Hours)"
     var cell = document.createElement("th");
 
@@ -195,19 +262,18 @@ function buildUtcOffsetRow (row) {
     cell.classList.add (className);
     cell.setAttribute("id", className);
 
-    row.appendChild(cell);
-    row.style.height = "30px";
+    offsetRow.appendChild(cell);
+    offsetRow.style.height = "30px";
 
     for (var city in timezones) {
         className=buildClassName (city, "utc-offset");
 
-        var cell = row.insertCell();
+        var cell = offsetRow.insertCell();
         cell.textContent = className;
         cell.classList.add (className);
         cell.setAttribute("id", className);
     }
 
-    row.classList.add ("offset-row");
 }
 
 //----------------------------------------------------------------------------
@@ -244,15 +310,15 @@ function buildTable() {
 
     buildHeaderRow();
 
-
     // Get the reference for the table
     var table = document.querySelector('.TimeTable');
     // Get the reference for the table body
     var tableBody = table.createTBody();
     var row = tableBody.insertRow();
 
-
-    buildUtcOffsetRow(row);
+    row.classList.add ("offset-row");
+    row.setAttribute("id", "offset-row");
+    buildUtcOffsetRow();
 
     // Loop through rows
     for (var i = startRowOffset; i <= endRowOffset; i++) {
@@ -277,16 +343,16 @@ function buildTable() {
 
 function logSanDiego (city, msg) {
     if ("San Diego" === city) {
-        console.log (msg);
+        debugMsg (msg);
     }
 }
 
 
 function updateClocks() {
     // Get current time in UTC
-    var currentTime=new Date();
+    // var selectedDate=new Date();
 
-    console.log ("\nupdateClocks");
+    traceMsg ("\nupdateClocks: ");
 
     // Loop through rows - Update the time for each city
     for (var offset = startRowOffset; offset <= endRowOffset; offset++) {
@@ -302,21 +368,21 @@ function updateClocks() {
             className=buildClassName (city, "time-offset", offset);
             var elem=document.getElementById(className);
 
-            // console.log ("Update Clock: " + className + " elememt: " + elem);
+            // debugMsg ("Update Clock: " + className + " elememt: " + elem);
             // logSanDiego (city, "Update Clock: " + className + " elememt: " + elem);
 
             if (elem != null) {
-                var dateForSpecificTimeZoneAndOffset = new Date(currentTime.getTime() + (offset * 3600000));
+                var dateForSpecificTimeZoneAndOffset = new Date(selectedDate.getTime() + (offset * 3600000));
                 var cityTimeStr = dateForSpecificTimeZoneAndOffset.toLocaleString('en-US', cityTimeZoneDispOptions);
                 elem.textContent = cityTimeStr;
 
                 // Highlight the cell if the time is before 8 am or after 8 pm
                 var hour = dateForSpecificTimeZoneAndOffset.toLocaleString('en-US', cityTimeZoneHourOptions);
-                // console.log (city + "   " + cityTimeStr + "     hour: " + hour);
+                // debugMsg (city + "   " + cityTimeStr + "     hour: " + hour);
                 // logSanDiego (city, city + "   " + cityTimeStr + "     hour: " + hour);
 
                 var dayOfWeek = dateForSpecificTimeZoneAndOffset.toLocaleString('en-US', cityTimeZoneDayOfWeekOptions);
-                // console.log (city + "   " + cityTimeStr + "     hour: " + hour + "  DayOfWeek: " + dayOfWeek);
+                // debugMsg (city + "   " + cityTimeStr + "     hour: " + hour + "  DayOfWeek: " + dayOfWeek);
                 // logSanDiego (city, city + "   " + cityTimeStr + "     hour: " + hour + "  DayOfWeek: " + dayOfWeek);
 
                 if (parseInt(hour) < startOfDayTime || parseInt(hour) > endOfDayTime || dayOfWeek.startsWith ('S')) {
@@ -327,20 +393,23 @@ function updateClocks() {
             }
         }
     }
+}
 
 
+function updateOffset() {
     for (var city in timezones) {
         // Calculate offset hours
         var timezone = timezones[city];
 
-        var utcOffset = getTimeZoneOffset(new Date(), timezone) / 60;
-        var myOffset = (getTimeZoneOffset(new Date(), timezone) - getTimeZoneOffset(new Date(), myTimeZone)) / 60;
+        var utcOffset = getTimeZoneOffset(selectedDate, timezone) / 60;
+        var myOffset = (getTimeZoneOffset(selectedDate, timezone) - getTimeZoneOffset(selectedDate, myTimeZone)) / 60;
         className=buildClassName (city, "utc-offset");
         var elem = document.getElementById(className);
     
-        // console.log ("Update Offset: " + className + " elememt: " + elem);
+        // debugMsg ("Update Offset: " + className + " elememt: " + elem);
         if (elem != null) {
             if (utcOffset > 0) {
+                // Add + for positive value
                 elem.textContent = "UTC (+" + utcOffset + ") / Offset (" + myOffset + ")";
             }  else {
                 elem.textContent = "UTC (" + utcOffset + ") / Offset (" + myOffset + ")";
@@ -349,13 +418,70 @@ function updateClocks() {
     }
 }
 
+function setDate(selectedDate) {
+    document.addEventListener("DOMContentLoaded", () => {
+        const dateInput = document.getElementById("dateInput");
+        debugMsg ("selectedDate: " + selectedDate);
+        const date = selectedDate.toISOString().split("T")[0];
+        dateInput.value = date;
+        updateDate();
+    });
+
+   const dateInput = document.getElementById("dateInput");
+   const date = selectedDate.toISOString().split("T")[0];
+   dateInput.value = date;
+}
+
+
+function updateDate() {
+    const dateValue = document.getElementById("dateInput").value;
+    debugMsg ("updateDate - dateValue: " + dateValue);
+
+    const now = new Date();
+    selectedDate = new Date(dateValue + "T" + now.toTimeString().split(" ")[0]);
+
+    debugMsg ("updateDate - selectedDate = " + selectedDate);
+    buildUtcOffsetRow();
+}
+
+function previousDate() {
+    const dateValue = document.getElementById("dateInput").value;
+    debugMsg ("PreviouDate - dateValue: " + dateValue);
+
+    const now = new Date();
+    selectedDate = new Date(dateValue + "T" + now.toTimeString().split(" ")[0]);
+
+    selectedDate.setDate(selectedDate.getDate() - 1); // Increment by one day
+    debugMsg (`PreviousDate - ${selectedDate}`);
+    setDate(selectedDate);
+}
+
+function nextDate() {
+    const dateValue = document.getElementById("dateInput").value;
+    debugMsg ("nextDate - dateValue: " + dateValue);
+
+    const now = new Date();
+    selectedDate = new Date(dateValue + "T" + now.toTimeString().split(" ")[0]);
+
+    selectedDate.setDate(selectedDate.getDate() + 1); // Increment by one day
+
+    debugMsg (`nextDate - ${selectedDate}`);
+    setDate(selectedDate);
+}
+
+document.getElementById("dateInput").addEventListener("change", updateDate);
+
+setDate(selectedDate);
+
 buildTable();
 
 // Update clocks every second
 setInterval(updateClocks, 1000);
+setInterval(updateOffset, 2000);
 
 // Initial update
-updateClocks();
+// updateClocks();
+updateOffset();
    
 </script>
 </body>

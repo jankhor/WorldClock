@@ -22,7 +22,9 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        font-size: clamp (3px, 2.75vw, 16px);
+        /* font-size: 10px;
+        font-size: 2.65vw; */
+        font-size: min(2.5vw, 20px);
     }
 
     .scrollable-table-div {
@@ -73,6 +75,22 @@
 
     .gray-cell {
         background-color: #666666;
+    }
+	
+	.even-morning-cell {
+        background-color: #13f7e754;
+    }
+
+	.odd-morning-cell {
+        background-color: #13f7e7ed;
+    }
+		
+	.even-evening-cell {
+        background-color: #f77e136e;
+    }
+
+	.odd-evening-cell {
+        background-color: #f77e13e3;
     }
 
     .current-row {
@@ -145,9 +163,10 @@ var timezones = {
     "Sydney": "Australia/Sydney",
     "Perth": "Australia/Perth",
     "Hydera.": "Asia/Kolkata",
-    "London": "Europe/London"
+    "London": "Europe/London",
+	"Khmer": "Asia/Phnom_Penh"
     // "UTC": "UTC",
-    // "Khmer": "Asia/Phnom_Penh"
+    
 };
 
 function traceMsg( msg) {
@@ -390,6 +409,19 @@ function updateClocks() {
                     elem.classList.add("gray-cell");
                 } else {
                     elem.classList.remove("gray-cell");
+					if ( (offset % 2) == 0) {
+						if (parseInt(hour) < 12) {
+							elem.classList.add("odd-morning-cell");
+						} else {
+							elem.classList.add("odd-evening-cell");
+						}
+					} else  {
+						if (parseInt(hour) < 12) {
+							elem.classList.add("even-morning-cell");
+						} else {
+							elem.classList.add("even-evening-cell");
+						}					
+					}
                 }
             }
         }

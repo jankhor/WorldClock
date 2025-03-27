@@ -24,7 +24,7 @@
         align-items: center;
         /* font-size: 10px;
         font-size: 2.65vw; */
-        font-size: min(2.5vw, 20px);
+        font-size: min(2vw, 16px);
     }
 
     .scrollable-table-div {
@@ -77,20 +77,36 @@
         background-color: #666666;
     }
 	
-	.even-morning-cell {
-        background-color: #13f7e754;
+	.morning-even-cell {
+        color: #4325f0cc;
+        font-weight: bold;
+        font-styole: italic;
     }
 
-	.odd-morning-cell {
-        background-color: #13f7e7ed;
+	.morning-odd-cell {
+        color: #4325f0cc;
+        font-weight: bold;
+        font-styole: italic;
     }
 		
-	.even-evening-cell {
-        background-color: #f77e136e;
+	.afternoon-even-cell {
+        color: #e36c0cbf;
+        font-weight: bold;
     }
 
-	.odd-evening-cell {
-        background-color: #f77e13e3;
+	.afternoon-odd-cell {
+        color: #e36c0cbf;
+        font-weight: bold;
+    }
+
+	.evening-even-cell {
+        color: #140301cc;
+        font-weight: bold;
+    }
+
+	.evening-odd-cell {
+        color: #140301cc;
+        font-weight: bold;
     }
 
     .current-row {
@@ -405,21 +421,27 @@ function updateClocks() {
                 // debugMsg (city + "   " + cityTimeStr + "     hour: " + hour + "  DayOfWeek: " + dayOfWeek);
                 // logSanDiego (city, city + "   " + cityTimeStr + "     hour: " + hour + "  DayOfWeek: " + dayOfWeek);
 
-                if (parseInt(hour) < startOfDayTime || parseInt(hour) > endOfDayTime || dayOfWeek.startsWith ('S')) {
+                var iHour=parseInt(hour);
+
+                if ( iHour < startOfDayTime || iHour > endOfDayTime || dayOfWeek.startsWith ('S')) {
                     elem.classList.add("gray-cell");
                 } else {
                     elem.classList.remove("gray-cell");
 					if ( (offset % 2) == 0) {
-						if (parseInt(hour) < 12) {
-							elem.classList.add("odd-morning-cell");
-						} else {
-							elem.classList.add("odd-evening-cell");
+						if (iHour < 12) {
+							elem.classList.add("morning-odd-cell");
+						} else if (iHour < 17) {
+							elem.classList.add("afternoon-odd-cell");
+                        } else {
+							elem.classList.add("evening-odd-cell");
 						}
 					} else  {
 						if (parseInt(hour) < 12) {
-							elem.classList.add("even-morning-cell");
+							elem.classList.add("morning-even-cell");
+						} else if (iHour < 17) {
+							elem.classList.add("afternoon-even-cell");
 						} else {
-							elem.classList.add("even-evening-cell");
+							elem.classList.add("evening-odd-cell");
 						}					
 					}
                 }

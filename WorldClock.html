@@ -483,9 +483,9 @@ function setDate(selectedDate) {
         updateDate();
     });
 
+   const localDate = getLocalISODate(selectedDate);
    const dateInput = document.getElementById("dateInput");
-   const date = selectedDate.toISOString().split("T")[0];
-   dateInput.value = date;
+   dateInput.value = localDate;
 }
 
 
@@ -500,28 +500,47 @@ function updateDate() {
     buildUtcOffsetRow();
 }
 
+
+function getLocalDate(isoDate) {
+  // Split the ISO date into parts
+  const [year, month, day] = isoDate.split('-').map(Number);
+  
+  // Get the current time components
+  const now = new Date();
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+  const seconds = now.getSeconds();
+  const milliseconds = now.getMilliseconds();
+
+  // Create a new Date object with the given date + current time
+  // (Months are 0-indexed in JavaScript, so `month - 1`)
+  const localDate = new Date(year, month - 1, day, hours, minutes, seconds, milliseconds);
+  
+  return localDate;
+}
+
 function previousDate() {
     const dateValue = document.getElementById("dateInput").value;
-    debugMsg ("PreviouDate - dateValue: " + dateValue);
+    debugMsg ("PreviouDate() - dateValue: " + dateValue);
 
-    const now = new Date();
-    selectedDate = new Date(dateValue + "T" + now.toTimeString().split(" ")[0]);
+    selectedDate = getLocalDate (dateValue);
+    debugMsg (`PreviousDate() - localDtm: ${selectedDate}`);
 
-    selectedDate.setDate(selectedDate.getDate() - 1); // Increment by one day
-    debugMsg (`PreviousDate - ${selectedDate}`);
+    selectedDate.setDate(selectedDate.getDate() - 1); // Decrement by one day
+
+    debugMsg (`PreviousDate() - PreviousDtm: ${selectedDate}`);
     setDate(selectedDate);
 }
 
 function nextDate() {
     const dateValue = document.getElementById("dateInput").value;
-    debugMsg ("nextDate - dateValue: " + dateValue);
+    debugMsg ("nextDate() - dateValue: " + dateValue);
 
-    const now = new Date();
-    selectedDate = new Date(dateValue + "T" + now.toTimeString().split(" ")[0]);
-
+    selectedDate = getLocalDate (dateValue);
+    debugMsg (`nextDate() - localDtm ${selectedDate}`);
     selectedDate.setDate(selectedDate.getDate() + 1); // Increment by one day
 
-    debugMsg (`nextDate - ${selectedDate}`);
+    debugMsg (`nextDate() - NextDtm ${selectedDate}`);
     setDate(selectedDate);
 }
 
@@ -532,7 +551,7 @@ setDate(selectedDate);
 buildTable();
 
 // Update clocks every second
-setInterval(updateClocks, 1000);
+setInterval(updateClocks, 500);
 setInterval(updateOffset, 2000);
 
 // Initial update

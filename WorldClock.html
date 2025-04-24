@@ -167,7 +167,7 @@ var myTimeZone="America/Los_Angeles";
 var startOfDayTime=8
 var endOfDayTime=20
 var startRowOffset=-12
-var endRowOffset=12
+var endRowOffset=16
 
 // Timezone codes for each city
 // Asia/Phnom_Penh - https://timezonedb.com/time-zones
@@ -177,6 +177,7 @@ var timezones = {
     // "Boston": "America/New_York",
     "New Zealand": "Pacific/Auckland",
     "Sydney": "Australia/Sydney",
+    "Brisbane": "Australia/Brisbane", // DST (Apr-Oct), the same as Sydney, but Brisbane does not observe Daylight Saving, so from Oct-April, Brisbane is behind Sydney by 1 hour
     "Perth": "Australia/Perth",
     "Hydera.": "Asia/Kolkata",
     "London": "Europe/London",
@@ -195,19 +196,11 @@ function debugMsg( msg) {
     console.log (`[DEBUG] - ${msg}`);
 }
 
-// Set the selected date to current date
-// var selectedDate = new Date();
-var dateStr = "2025-03-01" + "T" + new Date().toTimeString().split(" ")[0];
-debugMsg ("dateStr: " + dateStr);
-var timestamp=Date.parse(dateStr);
-
-debugMsg ("timestamp: " + timestamp);
-var selectedDate = new Date(Date.parse(dateStr));
-selectedDate = new Date();
+var selectedDate = new Date();
 debugMsg ("selectedDate: " + selectedDate);
 
 //----------------------------------------------------------------------------
-// Calcculate the date offset from UTC
+// Calculate the date offset from UTC
 //----------------------------------------------------------------------------
 function getTimeZoneOffset(date, timeZone) {
     traceMsg ("getTimeZoneOffset - date: " + date + " - Timezone: " + timeZone);
@@ -473,12 +466,20 @@ function updateOffset() {
     }
 }
 
+function getLocalISODate(date) {
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+    return localDate.toISOString().split('T')[0];
+}
+
 function setDate(selectedDate) {
     document.addEventListener("DOMContentLoaded", () => {
         const dateInput = document.getElementById("dateInput");
-        debugMsg ("selectedDate: " + selectedDate);
-        const date = selectedDate.toISOString().split("T")[0];
-        dateInput.value = date;
+        debugMsg ("setDate() - selectedDate: " + selectedDate);
+
+        const localDate = getLocalISODate(selectedDate);
+        dateInput.value = localDate;
+
         updateDate();
     });
 

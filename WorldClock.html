@@ -405,13 +405,15 @@ function logSanDiego (city, msg) {
 
 function updateClocks() {
     // Get current time in UTC
-    // var selectedDate=new Date();
+    selectedDate=new Date();
+    setDate(selectedDate);
 
-    traceMsg ("\nupdateClocks: ");
+    // traceMsg ("\nupdateClocks(): ");
 
     // Loop through rows - Update the time for each city
     for (var offset = startRowOffset; offset <= endRowOffset; offset++) {
 
+        // debugMsg ("updateClocks() - RowOffset = " + offset);
         for (var city in timezones) {
             var timezone = timezones[city];
 
@@ -480,7 +482,7 @@ function updateOffset() {
         className=buildClassName (city, "utc-offset");
         var elem = document.getElementById(className);
     
-        // debugMsg ("Update Offset: " + className + " elememt: " + elem);
+        // debugMsg ("updateOffset() - ClassName: " + className + " elememt: " + elem);
         if (elem != null) {
             if (utcOffset > 0) {
                 // Add + for positive value
@@ -601,7 +603,7 @@ setInterval(updateClocks, 500);
 setInterval(updateOffset, 2000);
 
 // Initial update
-// updateClocks();
+updateClocks();
 updateOffset();
    
 // Call the function after table is generated

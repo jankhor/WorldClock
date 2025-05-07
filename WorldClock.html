@@ -406,8 +406,9 @@ function logSanDiego (city, msg) {
 
 function updateClocks() {
     // Get current time in UTC
-    selectedDate=new Date();
-    setDate(selectedDate);
+
+    const dateValue = document.getElementById("dateInput").value;
+    selectedDate = getLocalDate (dateValue);
 
     // traceMsg ("\nupdateClocks(): ");
 

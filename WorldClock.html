@@ -132,7 +132,7 @@
 
     .current-row {
         background-color: #ffccff;
-        font-weight: bold;
+        /* font-weight: bolder; */
     }
 
     tr:hover {
@@ -320,7 +320,7 @@ function buildUtcOffsetRow () {
     cell.setAttribute("id", className);
 
     offsetRow.appendChild(cell);
-    offsetRow.style.height = "27px";
+    offsetRow.style.height = "40px";
 
     for (var city in timezones) {
         className=buildClassName (city, "utc-offset");
@@ -448,7 +448,11 @@ function updateClocks() {
                 var iHour=parseInt(hour);
 
                 if ( iHour < startOfDayTime || iHour > endOfDayTime || dayOfWeek.startsWith ('S')) {
-                    elem.classList.add("gray-cell");
+                    if (offset == 0) {
+                        elem.style.color = "navy";
+                    } else {
+                        elem.classList.add("gray-cell");
+                    }
                 } else {
                     elem.classList.remove("gray-cell");
 					if ( (offset % 2) == 0) {

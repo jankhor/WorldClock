@@ -24,7 +24,7 @@
         align-items: center;
         /* font-size: 10px;
         font-size: 2.65vw; */
-        font-size: min(2.1vw, 16px);
+        font-size: min(2.1vw, 13px);
     }
 
     .container {
@@ -99,24 +99,24 @@
     }
 	
 	.morning-even-cell {
-        color: #4325f0cc;
+        color: #4325f0dd;
         font-weight: bold;
         font-style: italic;
     }
 
 	.morning-odd-cell {
-        color: #4325f0cc;
+        color: #4325f0dd;
         font-weight: bold;
         font-style: italic;
     }
 		
 	.afternoon-even-cell {
-        color: #e36c0cbf;
+        color: #e36c0cff;
         font-weight: bold;
     }
 
 	.afternoon-odd-cell {
-        color: #e36c0cbf;
+        color: #e36c0cff;
         font-weight: bold;
     }
 
@@ -320,7 +320,7 @@ function buildUtcOffsetRow () {
     cell.setAttribute("id", className);
 
     offsetRow.appendChild(cell);
-    offsetRow.style.height = "30px";
+    offsetRow.style.height = "27px";
 
     for (var city in timezones) {
         className=buildClassName (city, "utc-offset");

@@ -209,7 +209,7 @@ rel="icon" type="image/x-icon" />
 <body>
 
 
-    <div class="container"> <!-- New wrapper -->
+    <div class="container" id='container'> <!-- New wrapper -->
         <div class="header-controls"> <!-- Replaced <center> with modern <div> -->
             <a href="#" class="previous round" onclick="previousDate();return false;">&#8249;</a>
             <input type="date" id="dateInput">
@@ -248,6 +248,8 @@ var timezones = {
     
 };
 
+/*------------------------------------------------------------------------
+------------------------------------------------------------------------*/
 function traceMsg( msg) {
     return 0
     console.log (`[TRACE] - ${msg}`);
@@ -649,6 +651,35 @@ updateOffset();
    
 // Call the function after table is generated
 scrollToCurrentTime();
+
+// Set up touch event listeners
+const element = document.getElementById('container'); // or use document for whole page
+let touchstartX = 0;
+let touchendX = 0;
+
+debugMsg('Element - ' + element);
+element.addEventListener('touchstart', function(event) {
+    touchstartX = event.changedTouches[0].screenX;
+}, false);
+
+element.addEventListener('touchend', function(event) {
+    touchendX = event.changedTouches[0].screenX;
+    handleSwipe();
+}, false); 
+
+function handleSwipe() {
+    const threshold = 50; // minimum pixels to count as a swipe
+  
+    if (touchendX < touchstartX - threshold) {
+        debugMsg('handleSwipe() - Swiped left!');
+        nextDate();
+    }
+      
+    if (touchendX > touchstartX + threshold) {
+        debugMsg('handleSwipe() - Swiped right!');
+        previousDate();
+    }
+}
 
 </script>
 </body>

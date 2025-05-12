@@ -41,6 +41,26 @@
         /* background: white; */ /* Optional: prevents transparency over table */
         flex-shrink: 0; /* Prevents header from shrinking */
         width: 99%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+    }
+
+    .edit-zones-btn {
+        position: absolute;
+        right: 0;
+        padding: 5px 15px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .edit-zones-btn:hover {
+        background-color: #45a049;
     }
 
     .scrollable-table-div {
@@ -207,13 +227,11 @@ rel="icon" type="image/x-icon" />
 
 </head>
 <body>
-
-
     <div class="container" id='container'> <!-- New wrapper -->
         <div class="header-controls"> <!-- Replaced <center> with modern <div> -->
-            <a href="#" class="previous round" onclick="previousDate();return false;">&#8249;</a>
+            <a href="#" class="previous round" id='previouBtn' onclick="previousDate();return false;">&#8249;</a>
             <input type="date" id="dateInput">
-            <a href="#" class="next round" onclick="nextDate();return false;">&#8250;</a>
+            <a href="#" class="next round" id='nextBtn' onclick="nextDate();return false;">&#8250;</a>
         </div>
         <div class="scrollable-table-div">
             <table class="TimeTable">
@@ -221,8 +239,21 @@ rel="icon" type="image/x-icon" />
             </table>
         </div>
     </div>
+</body>
 
 <script>
+
+/*------------------------------------------------------------------------
+------------------------------------------------------------------------*/
+function traceMsg( msg) {
+    return 0
+    console.log (`[TRACE] - ${msg}`);
+}
+
+function debugMsg( msg) {
+    // return 0
+    console.log (`[DEBUG] - ${msg}`);
+}
 
 // Customization
 var myTimeZone="America/Los_Angeles";
@@ -234,7 +265,7 @@ var endRowOffset=16
 // Timezone codes for each city
 // Asia/Phnom_Penh - https://timezonedb.com/time-zones
 
-var timezones = {
+var timezones_old = {
     "San Diego": "America/Los_Angeles",
     // "Boston": "America/New_York",
     "New Zealand": "Pacific/Auckland",
@@ -248,17 +279,139 @@ var timezones = {
     
 };
 
-/*------------------------------------------------------------------------
-------------------------------------------------------------------------*/
-function traceMsg( msg) {
-    return 0
-    console.log (`[TRACE] - ${msg}`);
+debugMsg ('tomezones_old ' + JSON.stringify(timezones_old));
+
+let timezones = [];
+
+// Function to load cities from localStorage or use default
+// DST (Apr-Oct), the same as Sydney, but Brisbane does not observe Daylight Saving, so from Oct-April, Brisbane is behind Sydney by 1 hour
+function loadZoneList() {
+  const savedZones = localStorage.getItem('worldClockZones');
+
+  if (savedZones) {
+    debugMsg ("loadZoneList() - Have savedZones");
+    timezones = JSON.parse(savedZones);
+  } else {
+    // Default zones
+    debugMsg ("loadZoneList() - Initialize default");
+    timezones = {
+        "San Diego": "America/Los_Angeles",
+        "New Zealand": "Pacific/Auckland",
+        "Sydney": "Australia/Sydney",
+        "Brisbane": "Australia/Brisbane", 
+        "Perth": "Australia/Perth",
+        "Hydera.": "Asia/Kolkata",
+        "London": "Europe/London",
+    };
+
+    saveZoneList();
+  }
 }
 
-function debugMsg( msg) {
-    // return 0
-    console.log (`[DEBUG] - ${msg}`);
+loadZoneList();
+
+// Function to save cities to localStorage
+function saveZoneList() {
+    debugMsg ("saveZoneList() - " + JSON.stringify(timezones));
+    localStorage.setItem('worldClockZones', JSON.stringify(timezones));
 }
+
+// Add UI controls for editing zones
+function addEditUI() {
+        const editBtn = document.createElement('button');
+    editBtn.textContent = 'Edit Zones';
+    editBtn.className = 'edit-zones-btn';  // Add a class for styling
+    editBtn.onclick = showEditDialog;
+    
+    // Insert after the next button
+    const nextBtn = document.getElementById('nextBtn');
+    nextBtn.parentNode.insertBefore(editBtn, nextBtn.nextSibling);
+}
+
+/* */
+function showEditDialog() {
+    const dialog = document.createElement('div');
+    dialog.style.position = 'fixed';
+    dialog.style.top = '50%';
+    dialog.style.left = '50%';
+    dialog.style.transform = 'translate(-50%, -50%)';
+    dialog.style.backgroundColor = 'white';
+    dialog.style.padding = '20px';
+    dialog.style.border = '1px solid #ccc';
+    dialog.style.zIndex = '1000';
+    dialog.style.boxShadow = '0 0 10px rgba(0,0,0,0.5)';
+    
+    let html = '<h3>Edit Time Zones</h3><div id="zoneEntries">';
+    
+    // Add existing zones
+    let index = 0;
+    for (const [name, value] of Object.entries(timezones)) {
+        html += `
+            <div style="margin-bottom: 5px;">
+                <input type="text" value="${name}" placeholder="Zone Name" id="zoneName${index}">
+                <input type="text" value="${value}" placeholder="Timezone" id="zoneValue${index}">
+                <button onclick="removeZone('${name}')">Remove</button>
+            </div>
+        `;
+        index++;
+    }
+    
+    html += '</div>';
+    html += '<button onclick="addNewZoneField()">Add Zone</button>';
+    html += '<div style="margin-top: 10px;">';
+    html += '<button onclick="saveZones()" style="margin-right: 10px;">Save</button>';
+    html += '<button onclick="document.body.removeChild(this.parentNode.parentNode)">Cancel</button>';
+    html += '</div>';
+    
+    dialog.innerHTML = html;
+    document.body.appendChild(dialog);
+}
+
+// Global functions for zone management
+window.addNewZoneField = function() {
+    const container = document.getElementById('zoneEntries');
+    const newDiv = document.createElement('div');
+    newDiv.style.marginBottom = '5px';
+    newDiv.innerHTML = `
+        <input type="text" placeholder="Zone Name">
+        <input type="text" placeholder="Timezone">
+        <button onclick="this.parentNode.remove()">Remove</button>
+    `;
+    container.appendChild(newDiv);
+};
+
+window.removeZone = function(name) {
+    delete timezones[name];
+    showEditDialog(); // Refresh the dialog
+};
+
+window.saveZones = function() {
+    const entries = document.getElementById('zoneEntries').children;
+    const newZones = {};
+    
+    for (let i = 0; i < entries.length; i++) {
+        const inputs = entries[i].getElementsByTagName('input');
+        const name = inputs[0].value.trim();
+        const value = inputs[1].value.trim();
+        
+        if (name && value) {
+            newZones[name] = value;
+        }
+    }
+    
+    timezones = newZones;
+    saveZoneList();
+    document.querySelector('div[style*="position: fixed;"]').remove();
+    buildTable(); // Rebuild the table with new zones
+};
+
+// Initialize the application
+document.addEventListener('DOMContentLoaded', function() {
+    loadZoneList();
+    addEditUI();
+    // buildTable();
+    //startClocks();
+});
 
 var selectedDate = new Date();
 debugMsg ("selectedDate: " + selectedDate);
@@ -660,12 +813,12 @@ let touchendX = 0;
 debugMsg('Element - ' + element);
 element.addEventListener('touchstart', function(event) {
     touchstartX = event.changedTouches[0].screenX;
-}, false);
+}, {passive: true});
 
 element.addEventListener('touchend', function(event) {
     touchendX = event.changedTouches[0].screenX;
     handleSwipe();
-}, false); 
+}, {passive: true});
 
 function handleSwipe() {
     const threshold = 50; // minimum pixels to count as a swipe
@@ -682,5 +835,4 @@ function handleSwipe() {
 }
 
 </script>
-</body>
 </html>

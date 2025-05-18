@@ -321,7 +321,7 @@ function saveZoneList() {
 // Add UI controls for editing zones
 function addEditUI() {
         const editBtn = document.createElement('button');
-    editBtn.innerHTML = '<kbd>&#9776;</kbd>'
+    editBtn.innerHTML = '&#128221;'
     editBtn.className = 'edit-zones-btn';  // Add a class for styling
     editBtn.onclick = showEditDialog;
     
@@ -353,7 +353,7 @@ function showEditDialog() {
                 <input type="text" value="${name}" placeholder="Zone Name" id="zoneName${index}">
                 <input type="text" value="${value}" placeholder="Timezone" id="zoneValue${index}">
                 <button onclick="removeZone('${name}')">Remove</button>
-            </div>
+             </div>
         `;
         index++;
     }

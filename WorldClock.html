@@ -893,33 +893,58 @@ updateOffset();
 scrollToCurrentTime();
 
 // Set up touch event listeners
+const SWIPE_THRESHOLD = 50; // Minimum pixels to count as a swipe
+const MAX_VERTICAL_RATIO = 0.5; // Max vertical movement allowed for horizontal swipe (ratio of total distance)
+const MAX_HORIZONTAL_RATIO = 0.5; // Max horizontal movement allowed for vertical swipe
+let touchStartX, touchStartY;
+
 const element = document.getElementById('container'); // or use document for whole page
-let touchstartX = 0;
-let touchendX = 0;
-
 debugMsg('Element - ' + element);
-element.addEventListener('touchstart', function(event) {
-    touchstartX = event.changedTouches[0].screenX;
+element.addEventListener('touchstart', function(e) {
+    touchStartX = e.changedTouches[0].screenX;
+    touchStartY = e.changedTouches[0].screenY;
 }, {passive: true});
 
-element.addEventListener('touchend', function(event) {
-    touchendX = event.changedTouches[0].screenX;
-    handleSwipe();
-}, {passive: true});
-
-function handleSwipe() {
-    const threshold = 50; // minimum pixels to count as a swipe
+element.addEventListener('touchend', function(e) {
+  const touchEndX = e.changedTouches[0].screenX;
+  const touchEndY = e.changedTouches[0].screenY;
   
-    if (touchendX < touchstartX - threshold) {
-        debugMsg('handleSwipe() - Swiped left!');
+  const xDiff = touchEndX - touchStartX;
+  const yDiff = touchEndY - touchStartY;
+  
+  const absXDiff = Math.abs(xDiff);
+  const absYDiff = Math.abs(yDiff);
+  const totalDistance = absXDiff + absYDiff;
+  
+  // Calculate movement ratios
+  const xRatio = absXDiff / totalDistance;
+  const yRatio = absYDiff / totalDistance;
+  
+  // Only register as swipe if movement exceeds threshold
+  if (totalDistance < SWIPE_THRESHOLD) return;
+  
+  // Determine swipe direction based on dominant axis
+  if (xRatio > MAX_VERTICAL_RATIO && absXDiff > absYDiff) {
+    // Horizontal swipe
+    if (xDiff < 0) {
+        debugMsg('Swiped left!');
         nextDate();
-    }
-      
-    if (touchendX > touchstartX + threshold) {
-        debugMsg('handleSwipe() - Swiped right!');
+    } else {
+        debugMsg('Swiped right!');
         previousDate();
     }
-}
+  } 
+  else if (yRatio > MAX_HORIZONTAL_RATIO && absYDiff > absXDiff) {
+    // Vertical swipe
+    if (yDiff < 0) {
+      console.log('Swiped up');
+      // Handle up swipe
+    } else {
+      console.log('Swiped down');
+      // Handle down swipe
+    }
+  }
+}, {passive: true});
 
 </script>
 </html>

@@ -293,6 +293,8 @@ function loadZoneList() {
   if (savedZones) {
     debugMsg ("loadZoneList() - Have savedZones");
     timezones = JSON.parse(savedZones);
+
+    debugMsg ("loadZoneList() - " + JSON.stringify(timezones));
   } else {
     // Default zones
     debugMsg ("loadZoneList() - Initialize default");
@@ -330,40 +332,86 @@ function addEditUI() {
     nextBtn.parentNode.insertBefore(editBtn, nextBtn.nextSibling);
 }
 
+function escapeHtml(str) {
+  return str.replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+}
+
 /* */
 function showEditDialog() {
     const dialog = document.createElement('div');
     dialog.style.position = 'fixed';
     dialog.style.top = '50%';
-    dialog.style.left = '50%';
-    dialog.style.transform = 'translate(-50%, -50%)';
+    dialog.style.left = '20%';
+    dialog.style.transform = 'translate(0%, -50%)';
+    dialog.style.width = '60%';
     dialog.style.backgroundColor = 'white';
     dialog.style.padding = '20px';
     dialog.style.border = '1px solid #ccc';
     dialog.style.zIndex = '1000';
     dialog.style.boxShadow = '0 0 10px rgba(0,0,0,0.5)';
     
-    let html = '<h3>Edit Time Zones</h3><div id="zoneEntries">';
-    
+    let html = `
+        <style>
+            /* Style for zone entries */
+            .zone-entry {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 10px;
+                width: 100%;
+            }
+            .zone-entry input {
+                flex: 1;
+                padding: 8px;
+                min-width: 0; /* Fixes flexbox overflow issue */
+            }
+            .zone-entry button {
+                white-space: nowrap;
+            }
+            
+            /* Style for button groups */
+            .button-container {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 20px;
+                width: 100%;
+            }
+            .action-buttons {
+                display: flex;
+                gap: 10px;
+                margin-left: auto; /* Push to right */
+            }
+        </style>
+        <h3 style="margin-top: 0;">Edit Time Zones</h3>
+        <div id="zoneEntries">
+    `;
+
     // Add existing zones
     let index = 0;
     for (const [name, value] of Object.entries(timezones)) {
         html += `
-            <div style="margin-bottom: 5px;">
+            <div class="zone-entry">
                 <input type="text" value="${name}" placeholder="Zone Name" id="zoneName${index}">
                 <input type="text" value="${value}" placeholder="Timezone" id="zoneValue${index}">
-                <button onclick="removeZone('${name}')">Remove</button>
-             </div>
+                <button onclick="removeZone(event, '${escapeHtml(name)}')">Remove</button>
+            </div>
         `;
         index++;
     }
     
-    html += '</div>';
-    html += '<button onclick="addNewZoneField()">Add Zone</button>';
-    html += '<div style="margin-top: 10px;">';
-    html += '<button onclick="saveZones()" style="margin-right: 10px;">Save</button>';
-    html += '<button onclick="document.body.removeChild(this.parentNode.parentNode)">Cancel</button>';
-    html += '</div>';
+    html += `</div>
+        <div class="button-container">
+            <button onclick="addNewZoneField()">Add Zone</button>
+            <div class="action-buttons">
+                <button onclick="saveZones()">Save</button>
+                <button onclick="document.body.removeChild(this.parentNode.parentNode)">Cancel</button>
+            </div>
+        </div>
+    `;
     
     dialog.innerHTML = html;
     document.body.appendChild(dialog);
@@ -382,10 +430,48 @@ window.addNewZoneField = function() {
     container.appendChild(newDiv);
 };
 
-window.removeZone = function(name) {
+window.removeZone = function(event, name) {
+        // Prevent default button behavior
+    debugMsg (`removeZone() - ${event} ${name}`);
+    event.preventDefault();
+    
+    // Stop event bubbling
+    event.stopPropagation();
+    
+    // Remove from timezones object
     delete timezones[name];
-    showEditDialog(); // Refresh the dialog
+    
+    // Remove the visual entry immediately
+    const button = event.target;
+    const entry = button.closest('.zone-entry');
+    entry.style.transition = 'opacity 0.3s';
+    entry.style.opacity = '0';
+    
+    // Remove after fade completes
+    setTimeout(() => {
+        entry.remove();
+        
+        // Optional: Update the remaining entries to ensure proper ordering
+        updateZoneEntries();
+    }, 300);
 };
+
+// Helper function to keep entries in sync
+function updateZoneEntries() {
+    const entriesContainer = document.getElementById('zoneEntries');
+    const entries = entriesContainer.querySelectorAll('.zone-entry');
+    
+    // Rebuild timezones object from current DOM
+    const newZones = {};
+    entries.forEach(entry => {
+        const inputs = entry.querySelectorAll('input');
+        const name = inputs[0].value.trim();
+        const value = inputs[1].value.trim();
+        if (name && value) newZones[name] = value;
+    });
+    
+    timezones = newZones;
+}
 
 window.saveZones = function() {
     const entries = document.getElementById('zoneEntries').children;
@@ -404,7 +490,6 @@ window.saveZones = function() {
     timezones = newZones;
     saveZoneList();
     document.querySelector('div[style*="position: fixed;"]').remove();
-    buildTable(); // Rebuild the table with new zones
 };
 
 // Initialize the application

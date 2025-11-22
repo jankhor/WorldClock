@@ -343,6 +343,7 @@ function escapeHtml(str) {
 /* */
 function showEditDialog() {
     const dialog = document.createElement('div');
+    dialog.id = 'zoneSetting-dialog';
     dialog.style.position = 'fixed';
     dialog.style.top = '50%';
     dialog.style.left = '20%';
@@ -354,67 +355,101 @@ function showEditDialog() {
     dialog.style.zIndex = '1000';
     dialog.style.boxShadow = '0 0 10px rgba(0,0,0,0.5)';
     
+
     let html = `
-        <style>
-            /* Style for zone entries */
-            .zone-entry {
-                display: flex;
-                gap: 10px;
-                margin-bottom: 10px;
-                width: 100%;
-            }
-            .zone-entry input {
-                flex: 1;
-                padding: 8px;
-                min-width: 0; /* Fixes flexbox overflow issue */
-            }
-            .zone-entry button {
-                white-space: nowrap;
-            }
-            
-            /* Style for button groups */
-            .button-container {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-top: 20px;
-                width: 100%;
-            }
-            .action-buttons {
-                display: flex;
-                gap: 10px;
-                margin-left: auto; /* Push to right */
-            }
-        </style>
-        <h3 style="margin-top: 0;">Edit Time Zones</h3>
-        <div id="zoneEntries">
+      <style>
+        /* Shared grid for header + entry rows */
+        .zone-row,
+        .zone-entry {
+          display: grid;
+          grid-template-columns: 2fr 2fr auto; /* name | timezone | button */
+          column-gap: 12px;
+          align-items: center;
+          width: 100%;
+        }
+
+        /* Spacing between rows */
+        .zone-row { margin-bottom: 6px; }
+        .zone-entry { margin-bottom: 10px; }
+
+        /* Header styling */
+        .zone-header {
+          font-weight: 600;
+          color: #333;
+        }
+        .zone-header a {
+          text-decoration: none;
+        }
+
+        /* Inputs fill their grid cells */
+        .zone-entry input {
+          width: 100%;
+          padding: 8px;
+          box-sizing: border-box;
+          min-width: 0; /* prevents overflow in grid */
+        }
+
+        .zone-entry button {
+          white-space: nowrap;
+        }
+
+        /* Button groups */
+        .button-container {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 20px;
+          width: 100%;
+        }
+        .action-buttons {
+          display: flex;
+          gap: 10px;
+          margin-left: auto;
+        }
+      </style>
+
+      <h3 style="margin-top: 0;">Edit Time Zones</h3>
+      <div id="zoneEntries">
+        <div class="zone-row zone-header">
+          <div>Alias Name</div>
+          <div>
+            <a href="https://timezonedb.com/time-zones" target="_blank" rel="noopener noreferrer">
+              https://timezonedb.com/time-zones
+            </a>
+          </div>
+          <div></div> <!-- empty to align with button column -->
+        </div>
     `;
+
 
     // Add existing zones
     let index = 0;
     for (const [name, value] of Object.entries(timezones)) {
-        html += `
-            <div class="zone-entry">
-                <input type="text" value="${name}" placeholder="Zone Name" id="zoneName${index}">
-                <input type="text" value="${value}" placeholder="Timezone" id="zoneValue${index}">
-                <button onclick="removeZone(event, '${escapeHtml(name)}')">Remove</button>
-            </div>
-        `;
-        index++;
-    }
-    
-    html += `</div>
-        <div class="button-container">
-            <button onclick="addNewZoneField()">Add Zone</button>
-            <div class="action-buttons">
-                <button onclick="saveZones()">Save</button>
-                <button onclick="document.body.removeChild(this.parentNode.parentNode)">Cancel</button>
-            </div>
+      html += `
+        <div class="zone-entry">
+          <input type="text" value="${name}" placeholder="Zone Name" id="zoneName${index}">
+          <input type="text" value="${value}" placeholder="Timezone" id="zoneValue${index}">
+          <button onclick="removeZone(event, '${escapeHtml(name)}')">Remove</button>
         </div>
+      `;
+      index++;
+    }
+
+    html += `
+      </div> <!-- /#zoneEntries -->
+
+      <div class="button-container">
+        <button onclick="addNewZoneField()">Add Zone</button>
+        <div class="action-buttons">
+          <button onclick="saveZones()">Save</button>
+          <button onclick="document.getElementById('zoneSetting-dialog')?.remove()">Cancel</button>
+        </div>
+      </div>
     `;
-    
+
     dialog.innerHTML = html;
     document.body.appendChild(dialog);
+
 }
 
 // Global functions for zone management

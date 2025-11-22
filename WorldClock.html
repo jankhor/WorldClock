@@ -192,6 +192,28 @@
     .round {
         border-radius: 50%;
     }
+
+    /* Drag handle styling */
+    .drag-handle {
+        cursor: grab;
+        padding: 0 8px;
+        color: #999;
+        user-select: none;
+        font-size: 18px;
+    }
+    
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+    
+    .zone-entry.dragging {
+        opacity: 0.5;
+        background-color: #e0e0e0;
+    }
+    
+    .zone-entry.drag-over {
+        border-top: 2px solid #4CAF50;
+    }
 </style>
 
 <link href="data:image/png;base64,
@@ -264,26 +286,8 @@ var endOfDayTime=20
 var startRowOffset=-12
 var endRowOffset=16
 
-// Timezone codes for each city
-// Asia/Phnom_Penh - https://timezonedb.com/time-zones
-
-var timezones_old = {
-    "San Diego": "America/Los_Angeles",
-    // "Boston": "America/New_York",
-    "New Zealand": "Pacific/Auckland",
-    "Sydney": "Australia/Sydney",
-    "Brisbane": "Australia/Brisbane", // DST (Apr-Oct), the same as Sydney, but Brisbane does not observe Daylight Saving, so from Oct-April, Brisbane is behind Sydney by 1 hour
-    "Perth": "Australia/Perth",
-    "Hydera.": "Asia/Kolkata",
-    "London": "Europe/London",
-	"Khmer": "Asia/Phnom_Penh"
-    // "UTC": "UTC",
-    
-};
-
-debugMsg ('tomezones_old ' + JSON.stringify(timezones_old));
-
 let timezones = [];
+let draggedElement = null;
 
 // Function to load cities from localStorage or use default
 // DST (Apr-Oct), the same as Sydney, but Brisbane does not observe Daylight Saving, so from Oct-April, Brisbane is behind Sydney by 1 hour
@@ -322,9 +326,9 @@ function saveZoneList() {
 
 // Add UI controls for editing zones
 function addEditUI() {
-        const editBtn = document.createElement('button');
+    const editBtn = document.createElement('button');
     editBtn.innerHTML = '&#128221;'
-    editBtn.className = 'edit-zones-btn';  // Add a class for styling
+    editBtn.className = 'edit-zones-btn';
     editBtn.onclick = showEditDialog;
     
     // Insert after the next button
@@ -362,7 +366,7 @@ function showEditDialog() {
         .zone-row,
         .zone-entry {
           display: grid;
-          grid-template-columns: 2fr 2fr auto; /* name | timezone | button */
+          grid-template-columns: auto 2fr 2fr auto;
           column-gap: 12px;
           align-items: center;
           width: 100%;
@@ -370,7 +374,21 @@ function showEditDialog() {
 
         /* Spacing between rows */
         .zone-row { margin-bottom: 6px; }
-        .zone-entry { margin-bottom: 10px; }
+        .zone-entry { 
+          margin-bottom: 10px;
+          cursor: move;
+          padding: 5px;
+          border-radius: 4px;
+          transition: background-color 0.2s;
+        }
+
+        .zone-entry:hover {
+          background-color: #f5f5f5;
+        }
+        
+        .zone-entry.drag-enabled {
+          cursor: move;
+        }
 
         /* Header styling */
         .zone-header {
@@ -409,9 +427,13 @@ function showEditDialog() {
       </style>
 
       <h3 style="margin-top: 0;">Edit Time Zones</h3>
+      <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+        💡 Drag zones by the handle (⋮⋮) to reorder them
+      </p>
       <div id="zoneEntries">
         <div class="zone-row zone-header">
-          <div>Alias Name</div>
+          <div></div>
+          <div>Zone Name</div>
           <div>
             <a href="https://timezonedb.com/time-zones" target="_blank" rel="noopener noreferrer">
               https://timezonedb.com/time-zones
@@ -421,14 +443,14 @@ function showEditDialog() {
         </div>
     `;
 
-
     // Add existing zones
     let index = 0;
     for (const [name, value] of Object.entries(timezones)) {
       html += `
-        <div class="zone-entry">
-          <input type="text" value="${name}" placeholder="Zone Name" id="zoneName${index}">
-          <input type="text" value="${value}" placeholder="Timezone" id="zoneValue${index}">
+        <div class="zone-entry" draggable="true" data-index="${index}" data-name="${escapeHtml(name)}">
+          <span class="drag-handle">⋮⋮</span>
+          <input type="text" value="${escapeHtml(name)}" placeholder="Zone Name" class="zone-name-input">
+          <input type="text" value="${escapeHtml(value)}" placeholder="Timezone" class="zone-value-input">
           <button onclick="removeZone(event, '${escapeHtml(name)}')">Remove</button>
         </div>
       `;
@@ -450,89 +472,208 @@ function showEditDialog() {
     dialog.innerHTML = html;
     document.body.appendChild(dialog);
 
+    // Add drag and drop event listeners
+    attachDragListeners();
+}
+
+// Attach drag and drop event listeners
+function attachDragListeners() {
+    const entries = document.querySelectorAll('.zone-entry');
+    
+    entries.forEach(entry => {
+        // Only enable dragging when drag handle is pressed
+        const dragHandle = entry.querySelector('.drag-handle');
+        
+        dragHandle.addEventListener('mousedown', function() {
+            entry.setAttribute('draggable', 'true');
+            entry.classList.add('drag-enabled');
+        });
+        
+        dragHandle.addEventListener('mouseup', function() {
+            entry.setAttribute('draggable', 'false');
+            entry.classList.remove('drag-enabled');
+        });
+        
+        entry.addEventListener('dragstart', handleDragStart);
+        entry.addEventListener('dragend', handleDragEnd);
+        entry.addEventListener('dragover', handleDragOver);
+        entry.addEventListener('drop', handleDrop);
+        entry.addEventListener('dragleave', handleDragLeave);
+    });
+}
+
+function handleDragStart(e) {
+    draggedElement = this;
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleDragEnd(e) {
+    this.classList.remove('dragging');
+    this.classList.remove('drag-enabled');
+    this.setAttribute('draggable', 'false');
+    document.querySelectorAll('.zone-entry').forEach(entry => {
+        entry.classList.remove('drag-over');
+    });
+}
+
+function handleDragOver(e) {
+    if (e.preventDefault) {
+        e.preventDefault();
+    }
+    e.dataTransfer.dropEffect = 'move';
+    
+    if (this !== draggedElement && this.classList.contains('zone-entry')) {
+        this.classList.add('drag-over');
+    }
+    return false;
+}
+
+function handleDragLeave(e) {
+    this.classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+    if (e.stopPropagation) {
+        e.stopPropagation();
+    }
+
+    if (draggedElement !== this && this.classList.contains('zone-entry')) {
+        // Get all zone entries
+        const container = document.getElementById('zoneEntries');
+        const allEntries = Array.from(container.querySelectorAll('.zone-entry'));
+        
+        const draggedIndex = allEntries.indexOf(draggedElement);
+        const targetIndex = allEntries.indexOf(this);
+        
+        // Reorder in DOM
+        if (draggedIndex < targetIndex) {
+            this.parentNode.insertBefore(draggedElement, this.nextSibling);
+        } else {
+            this.parentNode.insertBefore(draggedElement, this);
+        }
+        
+        // Update indices
+        updateZoneIndices();
+    }
+
+    return false;
+}
+
+function updateZoneIndices() {
+    const entries = document.querySelectorAll('.zone-entry');
+    entries.forEach((entry, index) => {
+        entry.dataset.index = index;
+    });
 }
 
 // Global functions for zone management
 window.addNewZoneField = function() {
     const container = document.getElementById('zoneEntries');
     const newDiv = document.createElement('div');
-    newDiv.style.marginBottom = '5px';
+    const newIndex = container.querySelectorAll('.zone-entry').length;
+    
+    newDiv.className = 'zone-entry';
+    newDiv.dataset.index = newIndex;
     newDiv.innerHTML = `
-        <input type="text" placeholder="Zone Name">
-        <input type="text" placeholder="Timezone">
-        <button onclick="this.parentNode.remove()">Remove</button>
+        <span class="drag-handle">⋮⋮</span>
+        <input type="text" placeholder="Zone Name" class="zone-name-input">
+        <input type="text" placeholder="Timezone" class="zone-value-input">
+        <button onclick="this.parentNode.remove(); updateZoneIndices();">Remove</button>
     `;
     container.appendChild(newDiv);
+    
+    // Attach drag listeners to new element
+    const dragHandle = newDiv.querySelector('.drag-handle');
+    
+    dragHandle.addEventListener('mousedown', function() {
+        newDiv.setAttribute('draggable', 'true');
+        newDiv.classList.add('drag-enabled');
+    });
+    
+    dragHandle.addEventListener('mouseup', function() {
+        newDiv.setAttribute('draggable', 'false');
+        newDiv.classList.remove('drag-enabled');
+    });
+    
+    newDiv.addEventListener('dragstart', handleDragStart);
+    newDiv.addEventListener('dragend', handleDragEnd);
+    newDiv.addEventListener('dragover', handleDragOver);
+    newDiv.addEventListener('drop', handleDrop);
+    newDiv.addEventListener('dragleave', handleDragLeave);
 };
 
 window.removeZone = function(event, name) {
-        // Prevent default button behavior
     debugMsg (`removeZone() - ${event} ${name}`);
     event.preventDefault();
-    
-    // Stop event bubbling
     event.stopPropagation();
     
-    // Remove from timezones object
     delete timezones[name];
     
-    // Remove the visual entry immediately
     const button = event.target;
     const entry = button.closest('.zone-entry');
     entry.style.transition = 'opacity 0.3s';
     entry.style.opacity = '0';
     
-    // Remove after fade completes
     setTimeout(() => {
         entry.remove();
-        
-        // Optional: Update the remaining entries to ensure proper ordering
-        updateZoneEntries();
+        updateZoneIndices();
     }, 300);
 };
 
-// Helper function to keep entries in sync
-function updateZoneEntries() {
-    const entriesContainer = document.getElementById('zoneEntries');
-    const entries = entriesContainer.querySelectorAll('.zone-entry');
+// FIXED saveZones function
+window.saveZones = function() {
+    debugMsg("saveZones() called");
     
-    // Rebuild timezones object from current DOM
+    const entries = document.querySelectorAll('.zone-entry');
     const newZones = {};
+    
     entries.forEach(entry => {
-        const inputs = entry.querySelectorAll('input');
-        const name = inputs[0].value.trim();
-        const value = inputs[1].value.trim();
-        if (name && value) newZones[name] = value;
+        const nameInput = entry.querySelector('.zone-name-input');
+        const valueInput = entry.querySelector('.zone-value-input');
+        
+        if (nameInput && valueInput) {
+            const name = nameInput.value.trim();
+            const value = valueInput.value.trim();
+            
+            if (name && value) {
+                newZones[name] = value;
+            }
+        }
     });
     
-    timezones = newZones;
-}
-
-window.saveZones = function() {
-    const entries = document.getElementById('zoneEntries').children;
-    const newZones = {};
-    
-    for (let i = 0; i < entries.length; i++) {
-        const inputs = entries[i].getElementsByTagName('input');
-        const name = inputs[0].value.trim();
-        const value = inputs[1].value.trim();
-        
-        if (name && value) {
-            newZones[name] = value;
-        }
-    }
+    debugMsg("saveZones() - New zones: " + JSON.stringify(newZones));
     
     timezones = newZones;
     saveZoneList();
-    document.querySelector('div[style*="position: fixed;"]').remove();
+    
+    // Close dialog
+    const dialog = document.getElementById('zoneSetting-dialog');
+    if (dialog) {
+        dialog.remove();
+    }
+    
+    // Rebuild the table with new zones
+    rebuildTable();
 };
+
+// Function to rebuild the entire table
+function rebuildTable() {
+    // Clear the table
+    const table = document.querySelector('.TimeTable');
+    table.innerHTML = '';
+    
+    // Rebuild everything
+    buildTable();
+    updateClocks();
+    updateOffset();
+    scrollToCurrentTime();
+}
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     loadZoneList();
     addEditUI();
-    // buildTable();
-    //startClocks();
 });
 
 var selectedDate = new Date();
@@ -641,7 +782,6 @@ function buildUtcOffsetRow () {
         cell.classList.add (className);
         cell.setAttribute("id", className);
     }
-
 }
 
 //----------------------------------------------------------------------------
@@ -738,9 +878,6 @@ function updateClocks() {
             // Populate the Current Time row 
             className=buildClassName (city, "time-offset", offset);
             var elem=document.getElementById(className);
-
-            // debugMsg ("Update Clock: " + className + " elememt: " + elem);
-            // logSanDiego (city, "Update Clock: " + className + " elememt: " + elem);
 
             if (elem != null) {
                 var dateForSpecificTimeZoneAndOffset = new Date(selectedDate.getTime() + (offset * 3600000));

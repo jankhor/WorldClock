@@ -215,7 +215,6 @@
         border-top: 1px solid #4CAF50;
     }
 
-    /* Enhanced Dialog Styling - Reduced font size by 25% */
     #zoneSetting-dialog {
         position: fixed;
         top: 50%;
@@ -223,7 +222,7 @@
         transform: translate(-50%, -50%);
         width: 90%;
         max-width: 700px;
-        max-height: 85vh;
+        max-height: 95vh; /* Increased from 85vh to 95vh (25% taller) */
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         padding: 0;
         border: none;
@@ -267,8 +266,8 @@
 
     .dialog-body {
         background: white;
-        padding: 6px 18px; /* Reduced padding */
-        max-height: calc(85vh - 200px);
+        padding: 15px 18px; /* Reduced padding */
+        max-height: calc(95vh - 200px); /* Updated to match new dialog max-height */
         overflow-y: auto;
     }
 

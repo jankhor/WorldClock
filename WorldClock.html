@@ -248,7 +248,7 @@
 
     .dialog-header {
         background: rgba(255, 255, 255, 0.95);
-        padding: 15px 18px; /* Reduced padding */
+        padding: 15px 18px 8px; /* Reduced padding */
         border-bottom: 1px solid rgba(0,0,0,0.1);
     }
 
@@ -267,7 +267,7 @@
 
     .dialog-body {
         background: white;
-        padding: 15px 18px; /* Reduced padding */
+        padding: 6px 18px; /* Reduced padding */
         max-height: calc(85vh - 200px);
         overflow-y: auto;
     }
@@ -293,13 +293,13 @@
 
     /* Spacing between rows - reduced by 50% */
     .zone-row { 
-        margin-bottom: 3px; /* reduced from 6px */
+        margin-bottom: 2px; /* reduced from 6px */
     }
     
     .zone-entry { 
         margin-bottom: 5px; /* reduced from 10px */
         cursor: move;
-        padding: 6px; /* Reduced padding */
+        padding: 1px; /* Reduced padding */
         border-radius: 8px;
         transition: all 0.2s;
         background: #f8f9fa;
@@ -319,13 +319,14 @@
     /* Header styling */
     .zone-header {
         font-weight: 600;
+        /* color: #495057; */
         color: #495057;
-        font-size: 9.75px; /* Reduced font size */
+        font-size: 12px; /* Reduced font size */
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        padding-bottom: 6px; /* Reduced padding */
+        padding-bottom: 2px; /* Reduced padding */
         border-bottom: 2px solid #e9ecef;
-        margin-bottom: 9px; /* Reduced margin */
+        margin-bottom: 2px; /* Reduced margin */
     }
     
     .zone-header a {
@@ -705,7 +706,7 @@ function showEditDialog() {
       <div class="dialog-body">
         <div id="zoneEntries">
           <div class="zone-row zone-header">
-            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
             <div>Name</div>
             <div>
               <a href="https://timezonedb.com/time-zones" target="_blank" rel="noopener noreferrer">
@@ -763,7 +764,7 @@ function createZoneEntryHTML(name, value, index) {
     `;
 }
 
-// Enhanced autocomplete functionality with country search
+// Enhanced autocomplete functionality with country search and auto-scroll
 function attachAutocompleteListeners() {
     const timezoneInputs = document.querySelectorAll('.timezone-input');
     
@@ -798,9 +799,14 @@ function attachAutocompleteListeners() {
                 ).join('');
                 autocompleteList.classList.add('show');
                 selectedIndex = -1;
+                
+                // Auto-scroll dialog to show the autocomplete list
+                autoScrollDialogToShowAutocomplete(input, autocompleteList);
             } else {
                 autocompleteList.innerHTML = '<div class="no-results">No matching timezones found</div>';
                 autocompleteList.classList.add('show');
+                // Also auto-scroll for no results case
+                autoScrollDialogToShowAutocomplete(input, autocompleteList);
             }
             
             // Add click listeners to items
@@ -846,6 +852,46 @@ function attachAutocompleteListeners() {
             }, 200);
         });
     });
+}
+
+// Fixed auto-scroll function for autocomplete
+function autoScrollDialogToShowAutocomplete(input, autocompleteList) {
+    const dialog = document.getElementById('zoneSetting-dialog');
+    const dialogBody = dialog.querySelector('.dialog-body');
+    
+    if (!dialog || !dialogBody) return;
+    
+    // Wait a moment for the DOM to update and autocomplete list to render
+    setTimeout(() => {
+        // Get the input's position relative to the dialog body
+        const inputRect = input.getBoundingClientRect();
+        const dialogBodyRect = dialogBody.getBoundingClientRect();
+        const dialogRect = dialog.getBoundingClientRect();
+        
+        // Calculate the space available below the input within the dialog
+        const spaceBelowInput = dialogRect.bottom - inputRect.bottom;
+        const autocompleteHeight = autocompleteList.offsetHeight;
+        
+        debugMsg(`Auto-scroll check: spaceBelow=${spaceBelowInput}px, listHeight=${autocompleteHeight}px`);
+        
+        // If autocomplete list doesn't fit below the input, scroll to make it visible
+        if (spaceBelowInput < autocompleteHeight + 10) { // +10px buffer
+            // Calculate how much we need to scroll
+            const inputOffsetFromTop = inputRect.top - dialogBodyRect.top;
+            const scrollNeeded = autocompleteHeight - spaceBelowInput + 50; // Extra space for comfort
+            
+            // Target scroll position to show both input and autocomplete
+            const targetScrollTop = dialogBody.scrollTop + scrollNeeded;
+            
+            debugMsg(`Scrolling dialog: currentScroll=${dialogBody.scrollTop}, target=${targetScrollTop}`);
+            
+            // Smooth scroll to position
+            dialogBody.scrollTo({
+                top: targetScrollTop,
+                behavior: 'smooth'
+            });
+        }
+    }, 10); // Small delay to ensure DOM is updated
 }
 
 function updateSelection(items, index) {

@@ -193,22 +193,44 @@
         border-radius: 50%;
     }
 
-    /* Drag handle styling */
-    .drag-handle {
-        cursor: grab;
-        padding: 0 8px;
-        color: #999;
-        user-select: none;
-        font-size: 18px;
-    }
+	/* Drag handle styling */
+	.drag-handle {
+	    cursor: grab;
+	    padding: 0 8px; /* Changed back from 12px */
+	    color: #999;
+	    user-select: none;
+	    font-size: 18px;
+	    /* REMOVED: min-height: 44px; */
+	    /* REMOVED: display: flex; */
+	    /* REMOVED: align-items: center; */
+	    /* REMOVED: justify-content: center; */
+	    -webkit-user-select: none;
+	    -moz-user-select: none;
+	    -ms-user-select: none;
+	    user-select: none;
+	    -webkit-touch-callout: none;
+	    -webkit-tap-highlight-color: transparent;
+	}
     
     .drag-handle:active {
         cursor: grabbing;
     }
     
+	.zone-entry {
+	    -webkit-user-select: none;
+	    -moz-user-select: none;
+	    -ms-user-select: none;
+	    user-select: none;
+	    -webkit-touch-callout: none;
+	    -webkit-tap-highlight-color: transparent;
+	    /* REMOVED: min-height: 44px; */
+	}
+    
     .zone-entry.dragging {
         opacity: 0.5;
         background-color: #e0e0e0;
+        transform: scale(1.02);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     }
     
     .zone-entry.drag-over {
@@ -937,14 +959,14 @@ function updateSelection(items, index) {
     });
 }
 
-// Attach drag and drop event listeners
+// Enhanced drag and drop with touch support
 function attachDragListeners() {
     const entries = document.querySelectorAll('.zone-entry');
     
     entries.forEach(entry => {
-        // Only enable dragging when drag handle is pressed
         const dragHandle = entry.querySelector('.drag-handle');
         
+        // Mouse events (existing)
         dragHandle.addEventListener('mousedown', function() {
             entry.setAttribute('draggable', 'true');
             entry.classList.add('drag-enabled');
@@ -955,12 +977,58 @@ function attachDragListeners() {
             entry.classList.remove('drag-enabled');
         });
         
+        // Touch events for mobile
+        dragHandle.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            entry.setAttribute('draggable', 'true');
+            entry.classList.add('drag-enabled');
+            draggedElement = entry;
+            entry.classList.add('dragging');
+        }, {passive: false});
+        
+        dragHandle.addEventListener('touchend', function(e) {
+            entry.setAttribute('draggable', 'false');
+            entry.classList.remove('drag-enabled');
+            entry.classList.remove('dragging');
+            draggedElement = null;
+            document.querySelectorAll('.zone-entry').forEach(el => {
+                el.classList.remove('drag-over');
+            });
+        });
+        
+        // Existing drag events
         entry.addEventListener('dragstart', handleDragStart);
         entry.addEventListener('dragend', handleDragEnd);
         entry.addEventListener('dragover', handleDragOver);
         entry.addEventListener('drop', handleDrop);
         entry.addEventListener('dragleave', handleDragLeave);
+        
+        // Touch move events for visual feedback
+        entry.addEventListener('touchmove', handleTouchMove, {passive: false});
     });
+}
+
+// Handle touch movement for visual feedback
+function handleTouchMove(e) {
+    if (!draggedElement) return;
+    
+    e.preventDefault();
+    
+    const touch = e.touches[0];
+    const elements = document.elementsFromPoint(touch.clientX, touch.clientY);
+    
+    // Find the zone-entry under the touch point
+    const targetEntry = elements.find(el => el.classList.contains('zone-entry'));
+    
+    // Remove drag-over from all entries
+    document.querySelectorAll('.zone-entry').forEach(entry => {
+        entry.classList.remove('drag-over');
+    });
+    
+    // Add drag-over to the entry under the touch point
+    if (targetEntry && targetEntry !== draggedElement) {
+        targetEntry.classList.add('drag-over');
+    }
 }
 
 function handleDragStart(e) {
@@ -969,6 +1037,7 @@ function handleDragStart(e) {
     e.dataTransfer.effectAllowed = 'move';
 }
 
+// Enhanced drag end to handle both mouse and touch
 function handleDragEnd(e) {
     this.classList.remove('dragging');
     this.classList.remove('drag-enabled');
@@ -976,6 +1045,11 @@ function handleDragEnd(e) {
     document.querySelectorAll('.zone-entry').forEach(entry => {
         entry.classList.remove('drag-over');
     });
+    
+    // Reset dragged element for touch
+    if (e.type === 'touchend') {
+        draggedElement = null;
+    }
 }
 
 function handleDragOver(e) {
@@ -994,30 +1068,57 @@ function handleDragLeave(e) {
     this.classList.remove('drag-over');
 }
 
+// Enhanced drop handler to work with touch
 function handleDrop(e) {
-    if (e.stopPropagation) {
-        e.stopPropagation();
-    }
-
-    if (draggedElement !== this && this.classList.contains('zone-entry')) {
+    if (e.type === 'touchend') {
+        // For touch events, use the element with drag-over class
+        const targetEntry = document.querySelector('.zone-entry.drag-over');
+        if (!targetEntry || draggedElement === targetEntry) return;
+        
         // Get all zone entries
         const container = document.getElementById('zoneEntries');
         const allEntries = Array.from(container.querySelectorAll('.zone-entry'));
         
         const draggedIndex = allEntries.indexOf(draggedElement);
-        const targetIndex = allEntries.indexOf(this);
+        const targetIndex = allEntries.indexOf(targetEntry);
         
         // Reorder in DOM
         if (draggedIndex < targetIndex) {
-            this.parentNode.insertBefore(draggedElement, this.nextSibling);
+            targetEntry.parentNode.insertBefore(draggedElement, targetEntry.nextSibling);
         } else {
-            this.parentNode.insertBefore(draggedElement, this);
+            targetEntry.parentNode.insertBefore(draggedElement, targetEntry);
         }
         
         // Update indices
         updateZoneIndices();
-    }
+        
+        // Clean up
+        targetEntry.classList.remove('drag-over');
+    } else {
+        // Original mouse-based drop handling
+        if (e.stopPropagation) {
+            e.stopPropagation();
+        }
 
+        if (draggedElement !== this && this.classList.contains('zone-entry')) {
+        	// Get all zone entries
+            const container = document.getElementById('zoneEntries');
+            const allEntries = Array.from(container.querySelectorAll('.zone-entry'));
+            
+            const draggedIndex = allEntries.indexOf(draggedElement);
+            const targetIndex = allEntries.indexOf(this);
+            
+        	// Reorder in DOM
+            if (draggedIndex < targetIndex) {
+                this.parentNode.insertBefore(draggedElement, this.nextSibling);
+            } else {
+                this.parentNode.insertBefore(draggedElement, this);
+            }
+            
+        	// Update indices
+            updateZoneIndices();
+        }
+    }
     return false;
 }
 
@@ -1051,6 +1152,7 @@ window.addNewZoneField = function() {
     // Attach drag listeners to new element
     const dragHandle = newDiv.querySelector('.drag-handle');
     
+    // Mouse events
     dragHandle.addEventListener('mousedown', function() {
         newDiv.setAttribute('draggable', 'true');
         newDiv.classList.add('drag-enabled');
@@ -1061,11 +1163,32 @@ window.addNewZoneField = function() {
         newDiv.classList.remove('drag-enabled');
     });
     
+    // Touch events
+    dragHandle.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        newDiv.setAttribute('draggable', 'true');
+        newDiv.classList.add('drag-enabled');
+        draggedElement = newDiv;
+        newDiv.classList.add('dragging');
+    }, {passive: false});
+    
+    dragHandle.addEventListener('touchend', function(e) {
+        newDiv.setAttribute('draggable', 'false');
+        newDiv.classList.remove('drag-enabled');
+        newDiv.classList.remove('dragging');
+        draggedElement = null;
+        document.querySelectorAll('.zone-entry').forEach(el => {
+            el.classList.remove('drag-over');
+        });
+    });
+    
+    // Existing event listeners
     newDiv.addEventListener('dragstart', handleDragStart);
     newDiv.addEventListener('dragend', handleDragEnd);
     newDiv.addEventListener('dragover', handleDragOver);
     newDiv.addEventListener('drop', handleDrop);
     newDiv.addEventListener('dragleave', handleDragLeave);
+    newDiv.addEventListener('touchmove', handleTouchMove, {passive: false});
     
     // Attach autocomplete to the new input
     attachAutocompleteListeners();

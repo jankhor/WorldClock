@@ -225,9 +225,18 @@
 	    -webkit-touch-callout: none;
 	    -webkit-tap-highlight-color: transparent;
 	    touch-action: pan-y;
-        padding: 2px;
+        padding: 3px 5px;
+        margin-bottom: 5px; /* reduced from 10px */
+        cursor: move;
+        padding: 1px; /* Reduced padding */
+        border-radius: 8px;
+        transition: all 0.2s;
+        /* background: #f8f9fa; */
+        background: #F2F2F2;
+        border: 1px solid transparent;
 	}
     
+    /* Improved dragging visual feedback */
     .zone-entry.dragging {
         opacity: 0.8;
         background-color: #e0e0e0;
@@ -236,11 +245,13 @@
         z-index: 1000;
         position: relative;
         transition: transform 0.2s, box-shadow 0.2s;
+        border: 2px dashed #667eea; /* Add visual border during drag */
     }
-    
+
     .zone-entry.drag-over {
-        border-top: 2px solid #4CAF50;
-        background-color: rgba(76, 175, 80, 0.1);
+        border-top: 3px solid #4CAF50;
+        background-color: rgba(76, 175, 80, 0.15);
+        transition: all 0.2s ease;
     }
 
     #zoneSetting-dialog {
@@ -277,7 +288,7 @@
         background: rgba(255, 255, 255, 0.95);
         padding: 15px 18px 8px; /* Reduced padding */
         border-bottom: 1px solid rgba(0,0,0,0.1);
-        height: 60px; /* Fixed height for header */
+        height: 65px; /* Fixed height for header */
         box-sizing: border-box;
     }
 
@@ -307,23 +318,24 @@
 
     .dialog-footer {
         background: rgba(255, 255, 255, 0.95);
-        padding: 12px 18px; /* Reduced padding */
+        padding: 8px 16px; /* Reduced padding */
         border-top: 1px solid rgba(0,0,0,0.1);
         display: flex;
         justify-content: space-between;
         align-items: center;
-        height: 60px; /* Fixed height for footer */
+        height: 55px; /* Fixed height for footer */
         box-sizing: border-box;
     }
 
-    /* Shared grid for header + entry rows */
+    /* UPDATED: Shared grid for header + entry rows with proper alignment */
     .zone-row,
     .zone-entry {
         display: grid;
-        grid-template-columns: auto 1fr 2fr auto;
-        column-gap: 9px; /* Reduced gap */
+        grid-template-columns: 20px 1fr 2fr 60px; /* Fixed widths for first and last columns */
+        column-gap: 3px;
         align-items: center;
         width: 100%;
+        padding: 0 4px; /* Add some horizontal padding */
     }
 
     /* Spacing between rows - reduced by 50% */
@@ -331,16 +343,6 @@
         margin-bottom: 2px; /* reduced from 6px */
     }
     
-    .zone-entry { 
-        margin-bottom: 5px; /* reduced from 10px */
-        cursor: move;
-        padding: 1px; /* Reduced padding */
-        border-radius: 8px;
-        transition: all 0.2s;
-        background: #f8f9fa;
-        border: 1px solid transparent;
-    }
-
     .zone-entry:hover {
         background-color: #e9ecef;
         border-color: #dee2e6;
@@ -351,24 +353,29 @@
         cursor: move;
     }
 
-    /* Header styling */
+    /* Header styling - UPDATED for better alignment */
     .zone-header {
         font-weight: 600;
-        /* color: #495057; */
         color: #495057;
-        font-size: 12px; /* Reduced font size */
+        font-size: 12px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        padding-bottom: 2px; /* Reduced padding */
+        padding-bottom: 2px;
         border-bottom: 2px solid #e9ecef;
-        margin-bottom: 2px; /* Reduced margin */
+        margin-bottom: 2px;
+        text-align: left; /* Ensure text aligns properly */
+        column-gap: 9px;
     }
     
+    /* Center the IANA link text properly */
     .zone-header a {
         text-decoration: none;
         color: #667eea;
         font-weight: 600;
         transition: color 0.2s;
+        display: block; /* Make it fill the cell */
+        text-align: left; /* Align with input fields */
+        padding: 2px 0; /* Add some vertical padding */
     }
 
     .zone-header a:hover {
@@ -376,15 +383,15 @@
         text-decoration: underline;
     }
 
-    /* Inputs fill their grid cells */
+    /* Ensure inputs fill their grid cells properly */
     .zone-entry input {
         width: 100%;
-        padding: 7.5px 9px; /* Reduced padding */
+        padding: 7.5px 9px;
         box-sizing: border-box;
         min-width: 0;
         border: 1px solid #ced4da;
         border-radius: 6px;
-        font-size: 10.5px; /* Reduced font size */
+        font-size: 10.5px;
         transition: all 0.2s;
         background: white;
     }
@@ -469,10 +476,11 @@
         background: #4b5563;
     }
 
-    /* Autocomplete styling */
+    /* Autocomplete container should fill available space */
     .autocomplete-container {
         position: relative;
         width: 100%;
+        min-width: 0; /* Important for grid layout */
     }
 
     .autocomplete-list {
@@ -761,7 +769,7 @@ function showEditDialog() {
       <div class="dialog-body">
         <div id="zoneEntries">
           <div class="zone-row zone-header">
-            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+            <div></div>
             <div>Name</div>
             <div>
               <a href="https://timezonedb.com/time-zones" target="_blank" rel="noopener noreferrer">
@@ -1023,29 +1031,31 @@ function attachDragListeners() {
     });
 }
 
-// Enhanced touch move handler
+// Enhanced touch move handler - FIXED VERSION
 function handleTouchMove(e) {
     if (!draggedElement) return;
     
     e.preventDefault();
     
-    touchCurrentY = e.touches[0].clientY;
     const touchY = e.touches[0].clientY;
-    
-    // Update visual position of dragged element
-    const draggedRect = draggedElement.getBoundingClientRect();
     const deltaY = touchY - touchStartY;
     
-    // Move the element visually (this is just for show - actual reorder happens on drop)
+    // Get the original position of the dragged element (before any transforms)
+    const draggedRect = draggedElement.getBoundingClientRect();
+    
+    // Move the element visually - use translate for smooth movement
     draggedElement.style.transform = `translateY(${deltaY}px)`;
+    draggedElement.style.zIndex = '1000'; // Ensure it's above other elements
     
     // Find which zone entry we're currently over
     const entries = Array.from(document.querySelectorAll('.zone-entry')).filter(entry => entry !== draggedElement);
     const container = document.getElementById('zoneEntries');
-    const containerRect = container.getBoundingClientRect();
     
     // Remove drag-over from all entries
-    entries.forEach(entry => entry.classList.remove('drag-over'));
+    entries.forEach(entry => {
+        entry.classList.remove('drag-over');
+        entry.style.transform = ''; // Clear any residual transforms
+    });
     
     // Find the entry under the touch point
     let targetEntry = null;
@@ -1054,6 +1064,8 @@ function handleTouchMove(e) {
     entries.forEach(entry => {
         const rect = entry.getBoundingClientRect();
         const entryCenterY = rect.top + rect.height / 2;
+        
+        // Calculate distance from touch to entry center
         const distance = Math.abs(touchY - entryCenterY);
         
         if (distance < minDistance && distance < rect.height) {
@@ -1066,16 +1078,20 @@ function handleTouchMove(e) {
     if (targetEntry) {
         targetEntry.classList.add('drag-over');
     }
+    
+    // Update touch start for next movement to make it smoother
+    touchStartY = touchY;
 }
 
-// Enhanced touch end handler
+// Enhanced touch end handler - FIXED CLEANUP
 function handleTouchEnd(e) {
     if (!draggedElement) return;
     
     e.preventDefault();
     
-    // Remove visual transform
+    // Remove visual transform and reset styles
     draggedElement.style.transform = '';
+    draggedElement.style.zIndex = '';
     
     // Find the target entry (the one with drag-over class)
     const targetEntry = document.querySelector('.zone-entry.drag-over');
@@ -1103,6 +1119,7 @@ function handleTouchEnd(e) {
     document.querySelectorAll('.zone-entry').forEach(entry => {
         entry.classList.remove('drag-over');
         entry.classList.remove('dragging');
+        entry.style.transform = ''; // Ensure all transforms are cleared
     });
     
     // Remove overlay
@@ -1465,7 +1482,8 @@ function buildUtcOffsetRow () {
     var cell = document.createElement("th");
 
     var className=buildClassName ("City", "utc-offset");
-    cell.textContent = "UTC Offset / Local Offset";
+    // cell.textContent = "UTC Offset / Local Offset";
+    cell.textContent = "UTC Offset";
     cell.classList.add (className);
     cell.setAttribute("id", className);
 
@@ -1639,9 +1657,11 @@ function updateOffset() {
         if (elem != null) {
             if (utcOffset > 0) {
                 // Add + for positive value
-                elem.textContent = "UTC (+" + utcOffset + ") / Offset (" + myOffset + ")";
+                // elem.textContent = "UTC (+" + utcOffset + ") / Offset (" + myOffset + ")";
+                elem.textContent = "UTC (+" + utcOffset + ")";
             }  else {
-                elem.textContent = "UTC (" + utcOffset + ") / Offset (" + myOffset + ")";
+                // elem.textContent = "UTC (" + utcOffset + ") / Offset (" + myOffset + ")";
+                elem.textContent = "UTC (" + utcOffset + ")";
             }
         }
     }
